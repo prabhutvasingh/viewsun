@@ -1,0 +1,6 @@
+build/
+*.o
+*.so
+.DS_Store
+.cache/
+compile_commands.json

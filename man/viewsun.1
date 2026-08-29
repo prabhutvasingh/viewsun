@@ -1,0 +1,57 @@
+.TH VIEWSUN 1 "August 2026" "viewsun 0.1.0" "User Commands"
+.SH NAME
+viewsun \- fully custom tiling compositor (no X11/Wayland)
+.SH SYNOPSIS
+.B viewsun
+[\fIOPTIONS\fR]
+.br
+.B viewsun -w
+\fI/path/to/wallpaper.png\fR
+.SH DESCRIPTION
+viewsun is a from-scratch tiling window manager / compositor that talks directly to DRM/KMS and evdev.
+It does not require X11 or Wayland. An SDL backend is included for testing inside a desktop session.
+.SH OPTIONS
+.TP
+.BR \-w ", " \-\-wallpaper " " \fIPATH\fR
+Set wallpaper image (PNG, JPG, BMP). This is the required way to set the background:
+.br
+.B viewsun -w ~/wallpaper.jpg
+.TP
+.BR \-\-backend " " \fIdrm|sdl|auto\fR
+Select backend. \fBauto\fR tries DRM then falls back to SDL. Default: auto.
+.TP
+.BR \-\-card " " \fIPATH\fR
+DRM card path, e.g. /dev/dri/card1. Default /dev/dri/card1.
+.TP
+.BR \-\-size " " \fIWIDTHxHEIGHT\fR
+Force resolution (useful for SDL: \-\-size 1280x720).
+.TP
+.BR \-h ", " \-\-help
+Show help.
+.TP
+.BR \-v ", " \-\-version
+Show version.
+.SH CONTROLS
+Alt+Enter spawn window
+.br
+Alt+q close focused
+.br
+Alt+Shift+q quit
+.br
+Alt+j/k focus
+.br
+Alt+h/l resize master
+.br
+Alt+m/b/g layouts (master/bsp/grid)
+.SH FILES
+.TP
+.I ~/.config/viewsun/wallpaper.png
+Default wallpaper if -w not given.
+.SH EXAMPLES
+viewsun -w /usr/share/backgrounds/wallpaper.jpg
+.br
+viewsun --backend sdl -w ./wall.jpg --size 1920x1080
+.br
+sudo viewsun --backend drm -w ~/wall.png
+.SH AUTHOR
+viewsun contributors.

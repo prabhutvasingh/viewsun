@@ -1,0 +1,13 @@
+# Maintainer: viewsun
+pkgname=viewsun
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Fully custom tiling compositor (no X11/Wayland) with wallpaper -w support"
+arch=('x86_64')
+depends=('libdrm' 'sdl2')
+makedepends=('pkgconf' 'gcc')
+license=('MIT')
+source=()
+prepare() { :; }
+build() { cd "$startdir/.." && make -j$(nproc); }
+package() { cd "$startdir/.." && make DESTDIR="$pkgdir" PREFIX=/usr install; }
