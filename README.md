@@ -22,7 +22,7 @@
 [![DRM](https://img.shields.io/badge/DRM-KMS%20direct-ff6b35?style=for-the-badge&logo=linux&logoColor=white)](#-architecture)
 [![WALLPAPER](https://img.shields.io/badge/WALLPAPER-viewsun%20--w-0ea5e9?style=for-the-badge&logo=gnome&logoColor=white)](#-wallpaper)
 [![NO_X11](https://img.shields.io/badge/NO_X11-NO_WAYLAND-black?style=for-the-badge)](#-why-viewsun)
-[![LICENSE](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](/LICENSE)
+[![LICENSE](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)](/LICENSE)
 
 [![Version](https://img.shields.io/badge/version-0.1.0-7c3aed?style=flat-square)](/Makefile)
 [![Build](https://img.shields.io/badge/build-make%20%26%20pkg--config-lightgrey?style=flat-square)](#-quick-start)
@@ -266,7 +266,7 @@ See issues for `good first issue` — tiling, wallpaper filters, input.
 
 ## 📄 License
 
-MIT © Viewsun Contributors — see [LICENSE](/LICENSE).
+GPL-3.0 © Viewsun Contributors — see [LICENSE](/LICENSE).
 
 ---
 
