@@ -78,6 +78,34 @@ void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp
         drawText(fb, w.rect.x+4, w.rect.y+4, w.title, 0xFFEBDBB2);
         // inner border for title
         drawRectBorder(fb, {w.rect.x, w.rect.y, w.rect.w, 16}, borderCol, 1);
+        // internal terminal buffer
+        if (w.type==WinType::Terminal && w.term) {
+            int rows = (w.rect.h - 20)/8;
+            int y0 = w.rect.y + 18; int x0 = w.rect.x + 2;
+            int start = 0;
+            if ((int)w.term->lines.size() > rows-1) start = w.term->lines.size() - (rows-1);
+            for (int r=0; r<rows-1 && (start+r) < (int)w.term->lines.size(); ++r) drawText(fb, x0, y0 + r*8, w.term->lines[start+r], 0xFFEBDBB2);
+            std::string cur = w.term->curLine + (w.focused?"_":"");
+            drawText(fb, x0, y0 + (rows-1)*8, cur, w.focused?0xFFA89984:0xFFEBDBB2);
+        } else if (w.type==WinType::Browser) {
+            int y0 = w.rect.y + 18; int x0 = w.rect.x + 4;
+            drawText(fb, x0, y0, "URL: " + w.url, 0xFFEBDBB2);
+            drawRect(fb, x0, y0+10, w.rect.w-8, 1, 0xFF665C54);
+            drawText(fb, x0, y0+14, "[internal browser placeholder]", 0xFFA89984);
+            drawText(fb, x0, y0+22, "Super+W spawns here, Enter to open", 0xFFBDAE93);
+            drawText(fb, x0, y0+30, "external: xdg-open still available", 0xFF928374);
+        } else if (w.type==WinType::FileManager) {
+            int y0 = w.rect.y + 18; int x0 = w.rect.x + 4;
+            drawText(fb, x0, y0, w.fmPath, 0xFFA89984);
+            drawRect(fb, x0, y0+10, w.rect.w-8, 1, 0xFF665C54);
+            int rows = (w.rect.h - 32)/8;
+            for (int i=0;i<rows && i < (int)w.fmFiles.size(); ++i) {
+                uint32_t col = (i==0 && w.focused)?0xFFFBF1C7:0xFFEBDBB2;
+                std::string name = w.fmFiles[i];
+                if ((int)name.size()> (w.rect.w-12)/8) name = name.substr(0,(w.rect.w-12)/8-3)+"...";
+                drawText(fb, x0, y0+14+i*8, name, col);
+            }
+        }
     }
     // status line bottom with time/date
     char timebuf[64];

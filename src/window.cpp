@@ -1,5 +1,7 @@
 #include "../include/window.h"
 #include "../include/tiling.h"
+#include <filesystem>
+#include <algorithm>
 
 int WindowManager::addWindow(const std::string &title) {
     Window w;
@@ -14,18 +16,95 @@ int WindowManager::addWindow(const std::string &title) {
         // insert into master area - grow left stack
         insertAt = cfg.master_count; // after existing left tiles
         if (insertAt > (int)windows.size()) insertAt = windows.size();
-        windows.insert(windows.begin()+insertAt, w);
+        windows.insert(windows.begin()+insertAt, std::move(w));
         cfg.master_count++;
         if (cfg.master_count > (int)windows.size()) cfg.master_count = windows.size();
         focused = insertAt;
     } else {
         insertAt = windows.size();
-        windows.insert(windows.begin()+insertAt, w);
+        windows.insert(windows.begin()+insertAt, std::move(w));
         focused = insertAt;
     }
     for (auto &win: windows) win.focused = false;
     windows[focused].focused = true;
     return w.id;
+}
+
+int WindowManager::addTerminal() {
+    Window w;
+    w.id = next_id++;
+    w.color = 0xFF1D2021;
+    w.title = "term" + std::to_string(w.id);
+    w.focused = false;
+    w.type = WinType::Terminal;
+    w.isTerm = true;
+    w.term = std::make_unique<Terminal>();
+    int cols = 80, rows = 24;
+    if (lastSw>0 && lastSh>0) { cols = (lastSw/2) / 8; rows = (lastSh/3) / 8; if (cols<20) cols=80; if (rows<5) rows=24; }
+    w.term->spawn(cols, rows);
+    bool left = (lastSw > 0 && mouseX < lastSw/2);
+    int insertAt = left ? std::min(cfg.master_count, (int)windows.size()) : windows.size();
+    windows.insert(windows.begin()+insertAt, std::move(w));
+    if (left) cfg.master_count++;
+    if (cfg.master_count > (int)windows.size()) cfg.master_count = windows.size();
+    focused = insertAt;
+    for (auto &win: windows) win.focused = false;
+    windows[focused].focused = true;
+    return windows[focused].id;
+}
+
+static std::vector<std::string> listDir(const std::string &path) {
+    std::vector<std::string> out;
+    try {
+        for (auto &e: std::filesystem::directory_iterator(path)) {
+            std::string name = e.path().filename().string();
+            if (e.is_directory()) name += "/";
+            out.push_back(name);
+        }
+    } catch(...) {}
+    std::sort(out.begin(), out.end());
+    if (out.empty()) out.push_back("(empty)");
+    return out;
+}
+
+int WindowManager::addBrowser() {
+    Window w;
+    w.id = next_id++;
+    w.color = 0xFF2A4A6B;
+    w.title = "browser" + std::to_string(w.id);
+    w.type = WinType::Browser;
+    w.url = "https://google.com";
+    w.focused=false;
+    bool left = (lastSw > 0 && mouseX < lastSw/2);
+    int insertAt = left ? std::min(cfg.master_count, (int)windows.size()) : windows.size();
+    windows.insert(windows.begin()+insertAt, std::move(w));
+    if (left) cfg.master_count++;
+    if (cfg.master_count > (int)windows.size()) cfg.master_count = windows.size();
+    focused = insertAt;
+    for (auto &win: windows) win.focused = false;
+    windows[focused].focused = true;
+    return windows[focused].id;
+}
+
+int WindowManager::addFileManager() {
+    Window w;
+    w.id = next_id++;
+    w.color = 0xFF3A3A2A;
+    w.title = "files" + std::to_string(w.id);
+    w.type = WinType::FileManager;
+    const char* home = getenv("HOME");
+    w.fmPath = home ? home : "/";
+    w.fmFiles = listDir(w.fmPath);
+    w.focused=false;
+    bool left = (lastSw > 0 && mouseX < lastSw/2);
+    int insertAt = left ? std::min(cfg.master_count, (int)windows.size()) : windows.size();
+    windows.insert(windows.begin()+insertAt, std::move(w));
+    if (left) cfg.master_count++;
+    if (cfg.master_count > (int)windows.size()) cfg.master_count = windows.size();
+    focused = insertAt;
+    for (auto &win: windows) win.focused = false;
+    windows[focused].focused = true;
+    return windows[focused].id;
 }
 
 void WindowManager::removeFocused() {
@@ -83,6 +162,14 @@ void WindowManager::tile(int sw, int sh) {
     }
     for (auto &w: windows) w.focused = false;
     if (focused>=0 && focused < (int)windows.size()) windows[focused].focused = true;
+    // resize terms to new rect
+    for (auto &w: windows) if (w.isTerm && w.term) {
+        int cols = (w.rect.w - 4) / 8;
+        int rows = (w.rect.h - 20) / 8;
+        if (cols<10) cols=10;
+        if (rows<2) rows=2;
+        if (cols!=w.term->cols || rows!=w.term->rows) w.term->resize(cols, rows);
+    }
 }
 
 Window* WindowManager::getFocused() {

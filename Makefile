@@ -3,7 +3,7 @@ CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Iinclude -ffast-math
 PKG_SDL := sdl2
 PKG_DRM := libdrm
 
-SRC_COMMON := src/tiling.cpp src/window.cpp src/renderer.cpp src/wallpaper.cpp src/main.cpp
+SRC_COMMON := src/tiling.cpp src/window.cpp src/renderer.cpp src/wallpaper.cpp src/main.cpp src/terminal.cpp
 SRC_SDL := src/backend_sdl.cpp
 SRC_DRM := src/backend_drm.cpp
 

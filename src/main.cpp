@@ -23,7 +23,7 @@ static void print_help(const char* prog) {
     printf("  -h, --help           show this help\n");
     printf("  -v, --version        show version\n");
     printf("\nControls:\n");
-    printf("  Super+Enter open kitty  Super+w browser  Super+e file manager  Super+P logout\n");
+    printf("  Super+Enter internal term  Super+w internal browser  Super+e internal files  Super+P logout\n");
     printf("  Alt+Enter (or Ctrl+n) spawn placeholder  Alt+q close  Alt+Shift+q quit\n");
     printf("  j/k focus  h/l resize master  m/b/g layouts (with Alt/Ctrl/Super, or plain)\n");
     printf("  Mouse: left-click focus, right-click close, move focuses\n");
@@ -174,9 +174,9 @@ int main(int argc, char** argv) {
             bool alt=ev.alt, shift=ev.shift; bool super=ev.super; bool ctrl=ev.ctrl;
             int k=ev.keycode;
             if (super && k==KEY_P) { running=false; } // Windows+P logout
-            else if (super && k==KEY_ENTER) { spawnKitty(); }
-            else if (super && k==KEY_W) { spawnBrowser(); }
-            else if (super && k==KEY_E) { spawnFileManager(); }
+            else if (super && k==KEY_ENTER) { wm.addTerminal(); wm.tile(sw,sh); }
+            else if (super && k==KEY_W) { wm.addBrowser(); wm.tile(sw,sh); }
+            else if (super && k==KEY_E) { wm.addFileManager(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n
             else if ((alt && shift) && k==KEY_Q) { running=false; }
@@ -195,9 +195,31 @@ int main(int argc, char** argv) {
                     else if (k==KEY_M) { wm.setLayout(Layout::MasterStack); wm.tile(sw,sh); }
                     else if (k==KEY_B) { wm.setLayout(Layout::BSP); wm.tile(sw,sh); }
                     else if (k==KEY_G) { wm.setLayout(Layout::Grid); wm.tile(sw,sh); }
+                } else {
+                    // plain typing into terminal if focused is term
+                    Window* f = wm.getFocused();
+                    if (f && f->isTerm && f->term) {
+                        char c = keycodeToChar(k, shift);
+                        if (c) f->term->writeInputChar(c);
+                    }
+                }
+            } else {
+                // route remaining keys to focused terminal (typing)
+                Window* f = wm.getFocused();
+                if (f && f->isTerm && f->term) {
+                    if (k==KEY_BACKSPACE) f->term->backspace();
+                    else if (k==KEY_ENTER) f->term->enter();
+                    else if (k==KEY_SPACE) f->term->writeInputChar(' ');
+                    else {
+                        char c = keycodeToChar(k, shift);
+                        if (c) f->term->writeInputChar(c);
+                        else if (k==KEY_DOT) f->term->writeInputChar(shift?'>':'.');
+                    }
                 }
             }
         }
+        // poll terminals for output
+        for (auto &w: wm.windows) if (w.isTerm && w.term) w.term->poll();
 
         Framebuffer fb = backend->framebuffer();
         render(fb, wm, wm.cfg, wp);

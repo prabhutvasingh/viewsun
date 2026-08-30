@@ -1,6 +1,10 @@
 #pragma once
 #include "common.h"
+#include "terminal.h"
 #include <vector>
+#include <memory>
+
+enum class WinType { Placeholder, Terminal, Browser, FileManager };
 
 struct Window {
     int id;
@@ -8,6 +12,15 @@ struct Window {
     uint32_t color;
     bool focused = false;
     std::string title;
+    WinType type = WinType::Placeholder;
+    bool isTerm = false;
+    std::unique_ptr<Terminal> term;
+    // browser
+    std::string url = "https://google.com";
+    // file manager
+    std::string fmPath;
+    std::vector<std::string> fmFiles;
+    int fmScroll = 0;
 };
 
 class WindowManager {
@@ -19,6 +32,9 @@ public:
     int next_id = 1;
 
     int addWindow(const std::string &title = "");
+    int addTerminal(); // spawns PTY term inside window
+    int addBrowser(); // internal browser placeholder
+    int addFileManager(); // internal file manager
     void removeFocused();
     void focusNext(int dir);
     void focusAt(int x, int y);
