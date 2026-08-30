@@ -3,7 +3,9 @@ CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Iinclude -ffast-math
 PKG_SDL := sdl2
 PKG_DRM := libdrm
 
-SRC_COMMON := src/tiling.cpp src/window.cpp src/renderer.cpp src/renderer_ttf.cpp src/wallpaper.cpp src/main.cpp src/terminal.cpp
+SRC_COMMON := src/tiling.cpp src/window.cpp src/renderer.cpp src/renderer_ttf.cpp src/wallpaper.cpp src/main.cpp src/terminal.cpp src/compositor/display_server.cpp
+LIB_CLIENT := lib/viewsun_client.cpp
+EXAMPLES := examples/custom_app examples/custom_term
 SRC_SDL := src/backend_sdl.cpp
 SRC_DRM := src/backend_drm.cpp
 
@@ -38,8 +40,10 @@ CXXFLAGS += $(PKG_CFLAGS)
 LDLIBS   += $(PKG_LIBS)
 
 OBJ := $(SRC:src/%.cpp=$(BUILD)/%.o)
+CLIENT_OBJ := $(BUILD)/viewsun_client.o
+EXAMPLE_OBJS := $(BUILD)/custom_app.o $(BUILD)/custom_term.o
 
-all: $(BIN)
+all: $(BIN) $(EXAMPLES) libviewsun-client
 
 $(BIN): $(OBJ)
 	@mkdir -p $(dir $@)
@@ -49,8 +53,33 @@ $(BUILD)/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(BUILD)/viewsun_client.o: lib/viewsun_client.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+libviewsun-client: $(CLIENT_OBJ)
+	@mkdir -p build
+	ar rcs build/libviewsun-client.a $(CLIENT_OBJ)
+
+$(BUILD)/custom_app.o: examples/custom_app.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+examples/custom_app: $(BUILD)/custom_app.o $(CLIENT_OBJ)
+	@mkdir -p examples
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+$(BUILD)/custom_term.o: examples/custom_term.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+examples/custom_term: $(BUILD)/custom_term.o $(CLIENT_OBJ)
+	@mkdir -p examples
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
 clean:
 	rm -rf $(BUILD)
+	rm -f examples/custom_app examples/custom_term
 
 install: all
 	install -Dm755 $(BIN) $(DESTDIR)$(BINDIR)/viewsun

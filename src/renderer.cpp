@@ -1,5 +1,6 @@
 #include "../include/renderer.h"
 #include "../include/font8x8.h"
+#include "../include/display_server.h"
 #include <algorithm>
 #include <cstring>
 #include <ctime>
@@ -70,12 +71,31 @@ void drawCursor(Framebuffer &fb, int x, int y) {
 
 void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp) {
     drawWallpaper(fb, wp, cfg.bg);
+    // try blit custom client buffers
+    auto &ds = DisplayServer::instance();
     for (auto &w: wm.windows) {
         uint32_t borderCol = w.focused ? cfg.border_focus : cfg.border_normal;
-        // interior
-        drawRect(fb, w.rect.x, w.rect.y, w.rect.w, w.rect.h, w.color);
-        // inset to show border: draw border around, then darken interior border? Simple: border overlay
-        drawRectBorder(fb, w.rect, borderCol, cfg.border);
+        // interior - if custom client has buffer, blit it, else color
+        bool isCustom = (w.type==WinType::Custom);
+        ViewsunBuffer* cbuf = nullptr;
+        if (isCustom) cbuf = ds.getBufferForWindow(w.id);
+        if (cbuf && cbuf->pixels) {
+            // blit buffer into window interior (below title bar)
+            int dstX = w.rect.x, dstY = w.rect.y+16, dstW = w.rect.w, dstH = w.rect.h-16;
+            int srcW = cbuf->width, srcH = cbuf->height;
+            // simple nearest-neighbor blit, clip
+            for(int y=0;y<dstH && y<srcH; y++){
+                for(int x=0;x<dstW && x<srcW; x++){
+                    int fx = dstX+x, fy = dstY+y;
+                    if(fx>=0&&fx<fb.width&&fy>=0&&fy<fb.height) fb.pixels[fy*fb.stride+fx] = cbuf->pixels[y*cbuf->stride/4 + x];
+                }
+            }
+            // still draw border
+            drawRectBorder(fb, w.rect, borderCol, cfg.border);
+        } else {
+            drawRect(fb, w.rect.x, w.rect.y, w.rect.w, w.rect.h, w.color);
+            drawRectBorder(fb, w.rect, borderCol, cfg.border);
+        }
         // title bar (top 16px)
         uint32_t titleBg = w.focused ? 0xFF3C3836 : 0xFF32302F;
         drawRect(fb, w.rect.x, w.rect.y, w.rect.w, 16, titleBg);

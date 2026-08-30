@@ -1,0 +1,52 @@
+<!-- Viewsun custom display protocol - from scratch, no Wayland -->
+<protocol name="viewsun">
+  <interface name="viewsun_display" version="1">
+    <request name="create_window">
+      <arg name="width" type="uint"/>
+      <arg name="height" type="uint"/>
+      <arg name="title" type="string"/>
+    </request>
+    <event name="window_created">
+      <arg name="id" type="uint"/>
+    </event>
+    <request name="create_buffer">
+      <arg name="window_id" type="uint"/>
+      <arg name="fd" type="fd"/>
+      <arg name="width" type="uint"/>
+      <arg name="height" type="uint"/>
+      <arg name="stride" type="uint"/>
+    </request>
+    <request name="damage">
+      <arg name="window_id" type="uint"/>
+      <arg name="x" type="int"/>
+      <arg name="y" type="int"/>
+      <arg name="width" type="uint"/>
+      <arg name="height" type="uint"/>
+    </request>
+    <request name="set_title">
+      <arg name="window_id" type="uint"/>
+      <arg name="title" type="string"/>
+    </request>
+    <request name="destroy_window">
+      <arg name="window_id" type="uint"/>
+    </request>
+    <event name="frame"/>
+    <event name="input_key">
+      <arg name="keycode" type="uint"/>
+      <arg name="state" type="uint"/> <!-- 1 press 0 release -->
+      <arg name="mod" type="uint"/> <!-- bitmask alt/shift/ctrl/super -->
+    </event>
+    <event name="input_button">
+      <arg name="button" type="uint"/>
+      <arg name="state" type="uint"/>
+      <arg name="x" type="int"/>
+      <arg name="y" type="int"/>
+    </event>
+    <event name="input_motion">
+      <arg name="x" type="int"/>
+      <arg name="y" type="int"/>
+    </event>
+    <event name="ping"/>
+    <request name="pong"/>
+  </interface>
+</protocol>

@@ -2,6 +2,7 @@
 #include "../include/window.h"
 #include "../include/renderer.h"
 #include "../include/wallpaper.h"
+#include "../include/display_server.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -54,6 +55,16 @@ static void spawnBrowser() {
 }
 static void spawnFileManager() {
     spawn("xdg-open \"$HOME\" 2>/dev/null || nautilus \"$HOME\" 2>/dev/null || dolphin \"$HOME\" 2>/dev/null || thunar \"$HOME\" 2>/dev/null || pcmanfm \"$HOME\" 2>/dev/null &");
+}
+static void spawnCustom(const char* title){
+    pid_t pid=fork();
+    if(pid==0){
+        // find viewsun custom app binary relative to viewsun
+        const char* app="/home/avi/Projects/viewsun/examples/custom_app";
+        if(access(app,X_OK)!=0) app="/usr/local/lib/viewsun/custom_app";
+        execl(app,app,title,(char*)nullptr);
+        _exit(127);
+    }
 }
 static void print_version() { printf("viewsun %s\n", VIEWSUN_VERSION); }
 
@@ -142,6 +153,9 @@ int main(int argc, char** argv) {
 
     WindowManager wm;
     wm.cfg = cfg;
+    // init custom display server (viewsun compositor)
+    auto &ds = DisplayServer::instance();
+    if (!ds.init(&wm, sw, sh)) fprintf(stderr,"viewsun: display server failed (custom clients disabled)\n");
     // keep wallpaper path in config for renderer fallback color
     wm.addWindow("WIN1");
     wm.addWindow("WIN2");
@@ -153,8 +167,11 @@ int main(int argc, char** argv) {
     // init mouse in center
     wm.mouseX = sw/2; wm.mouseY = sh/2;
     while (running) {
+        ds.pollClients();
         InputEvent ev{};
         while (backend->pollEvent(ev)) {
+            // forward input to focused custom client
+            ds.sendInputToFocused(ev);
             if (ev.type==InputEventType::Text) {
                 Window* f = wm.getFocused();
                 if (f && f->isTerm && f->term) f->term->writeInput(ev.text, strlen(ev.text));
@@ -194,8 +211,8 @@ int main(int argc, char** argv) {
             int k=ev.keycode;
             if (super && k==KEY_P) { running=false; } // Windows+P logout
             else if (super && k==KEY_ENTER) { wm.addTerminal(); wm.tile(sw,sh); }
-            else if (super && k==KEY_W) { wm.addBrowser(); wm.tile(sw,sh); spawnBrowser(); }
-            else if (super && k==KEY_E) { wm.addFileManager(); wm.tile(sw,sh); spawnFileManager(); }
+            else if (super && k==KEY_W) { spawnCustom("browser"); }
+            else if (super && k==KEY_E) { spawnCustom("files"); }
             else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n
             else if ((alt && shift) && k==KEY_Q) { running=false; }
@@ -243,12 +260,14 @@ int main(int argc, char** argv) {
         Framebuffer fb = backend->framebuffer();
         render(fb, wm, wm.cfg, wp);
         backend->present();
+        ds.broadcastFrame();
 
         // ~60fps cap, also low cpu when idle
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
         // handle case where SDL quit event encoded as Alt+Shift+Q already
     }
 
+    ds.shutdown();
     backend->shutdown();
     delete backend;
     return 0;

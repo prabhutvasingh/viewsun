@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-enum class WinType { Placeholder, Terminal, Browser, FileManager };
+enum class WinType { Placeholder, Terminal, Browser, FileManager, Custom };
 
 struct Window {
     int id;
