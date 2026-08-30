@@ -7,15 +7,22 @@ int WindowManager::addWindow(const std::string &title) {
     w.color = cfg.win_colors[(w.id-1) % 8];
     w.title = title.empty() ? "win" + std::to_string(w.id) : title;
     w.focused = false;
-    // tile wherever mouse hovers: left half -> left master, right half -> right stack
+    // tile wherever mouse hovers: left half -> left master (stack left), right half -> right stack
+    bool left = (lastSw > 0 && mouseX < lastSw/2);
     int insertAt;
-    if (lastSw > 0) {
-        insertAt = (mouseX < lastSw/2) ? 0 : windows.size();
+    if (left) {
+        // insert into master area - grow left stack
+        insertAt = cfg.master_count; // after existing left tiles
+        if (insertAt > (int)windows.size()) insertAt = windows.size();
+        windows.insert(windows.begin()+insertAt, w);
+        cfg.master_count++;
+        if (cfg.master_count > (int)windows.size()) cfg.master_count = windows.size();
+        focused = insertAt;
     } else {
         insertAt = windows.size();
+        windows.insert(windows.begin()+insertAt, w);
+        focused = insertAt;
     }
-    windows.insert(windows.begin()+insertAt, w);
-    focused = insertAt;
     for (auto &win: windows) win.focused = false;
     windows[focused].focused = true;
     return w.id;
@@ -23,7 +30,11 @@ int WindowManager::addWindow(const std::string &title) {
 
 void WindowManager::removeFocused() {
     if (windows.empty() || focused <0 || focused >= (int)windows.size()) return;
+    bool wasMaster = focused < cfg.master_count;
     windows.erase(windows.begin()+focused);
+    if (wasMaster && cfg.master_count > 1) cfg.master_count--;
+    if (cfg.master_count > (int)windows.size()) cfg.master_count = windows.size();
+    if (cfg.master_count < 1 && !windows.empty()) cfg.master_count = 1;
     if (windows.empty()) focused = -1;
     else {
         if (focused >= (int)windows.size()) focused = windows.size()-1;
