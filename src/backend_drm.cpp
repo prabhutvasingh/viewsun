@@ -83,6 +83,14 @@ public:
         fd=open(card,O_RDWR|O_CLOEXEC);
         if(fd<0) { fd=open("/dev/dri/card0",O_RDWR|O_CLOEXEC); }
         if(fd<0) { perror("open drm card"); return false; }
+        // acquire DRM master - needed when launched from GDM
+        drmSetMaster(fd);
+        // drop master check: if still not master, try to become
+        if (drmIsMaster(fd)==0) {
+            fprintf(stderr,"viewsun: DRM master acquired on %s\n", card);
+        } else {
+            fprintf(stderr,"viewsun: warning DRM not master, SetCrtc may fail (try switching VT)\n");
+        }
         if (!findConnector()) {
             // fallback to requested size
             if(w>0 && h>0) { W=w; H=h; mode.hdisplay=W; mode.vdisplay=H; }

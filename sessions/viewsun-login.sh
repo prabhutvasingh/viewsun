@@ -15,4 +15,7 @@ fi
 # ensure viewSun config dir
 mkdir -p "$HOME/.config/viewsun"
 
+# log for debugging DRM master crashes
+exec >"$HOME/.viewsun.log" 2>&1
+echo "viewsun-login: $(date) WALLPAPER=$WALLPAPER card=${VIEWSUN_CARD:-auto} DISPLAY=$DISPLAY XDG_SESSION_TYPE=$XDG_SESSION_TYPE"
 exec /usr/local/bin/viewsun -w "$WALLPAPER" --backend auto
