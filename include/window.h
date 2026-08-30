@@ -21,8 +21,10 @@ public:
     int addWindow(const std::string &title = "");
     void removeFocused();
     void focusNext(int dir);
+    void focusAt(int x, int y);
     void setLayout(Layout l);
     void resizeMaster(int delta);
     void tile(int screenW, int screenH);
     Window* getFocused();
+    int mouseX = 0, mouseY = 0;
 };

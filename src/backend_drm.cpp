@@ -118,31 +118,67 @@ public:
 
     bool pollEvent(InputEvent &ev) override {
         if (inputFds.empty()) return false;
+        static int curX = -1, curY = -1;
+        static int accDx = 0, accDy = 0;
+        static bool altDown=false, shiftDown=false, ctrlDown=false, superDown=false;
+        if (curX==-1) { curX=W/2; curY=H/2; }
         struct input_event ie;
+        // Use poll to avoid blocking, check all fds
         for(int fd: inputFds) {
             while (true) {
                 ssize_t n=read(fd,&ie,sizeof(ie));
                 if(n!=sizeof(ie)) break;
                 if(ie.type==EV_KEY) {
-                    ev.type = (ie.value==0)?InputEventType::KeyUp:InputEventType::KeyDown;
-                    ev.keycode=ie.code;
-                    // query modifiers? simple: track alt state via polling? Approximation: check if KEY_LEFTALT pressed
-                    // For v0.1 require Alt held for combos - we check current state via EV_KEY history not perfect, use ie.value
-                    // Instead, caller will track modifiers via separate logic; we set alt if KEY_LEFTALT/RIGHTALT is down
-                    // Quick hack: assume alt if previous event had alt? Leave false and let main handle via state cache
-                    ev.alt=false; ev.shift=false; ev.ctrl=false; ev.super=false;
-                    static bool altDown=false, shiftDown=false, ctrlDown=false, superDown=false;
-                    if(ie.code==KEY_LEFTALT || ie.code==KEY_RIGHTALT) altDown = (ie.value!=0);
-                    if(ie.code==KEY_LEFTSHIFT || ie.code==KEY_RIGHTSHIFT) shiftDown=(ie.value!=0);
-                    if(ie.code==KEY_LEFTCTRL || ie.code==KEY_RIGHTCTRL) ctrlDown=(ie.value!=0);
-                    if(ie.code==KEY_LEFTMETA || ie.code==KEY_RIGHTMETA) superDown=(ie.value!=0);
-                    ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown; ev.super=superDown;
-                    if(ie.code==KEY_LEFTALT || ie.code==KEY_RIGHTALT || ie.code==KEY_LEFTSHIFT || ie.code==KEY_RIGHTSHIFT || ie.code==KEY_LEFTCTRL || ie.code==KEY_RIGHTCTRL || ie.code==KEY_LEFTMETA || ie.code==KEY_RIGHTMETA) {
+                    if(ie.code==KEY_LEFTALT || ie.code==KEY_RIGHTALT) { altDown = (ie.value!=0); continue; }
+                    if(ie.code==KEY_LEFTSHIFT || ie.code==KEY_RIGHTSHIFT) { shiftDown=(ie.value!=0); continue; }
+                    if(ie.code==KEY_LEFTCTRL || ie.code==KEY_RIGHTCTRL) { ctrlDown=(ie.value!=0); continue; }
+                    if(ie.code==KEY_LEFTMETA || ie.code==KEY_RIGHTMETA) { superDown=(ie.value!=0); continue; }
+                    if(ie.code==BTN_LEFT || ie.code==BTN_RIGHT || ie.code==BTN_MIDDLE) {
+                        if(ie.value==1) { // press
+                            ev.type = InputEventType::MouseButton;
+                            ev.button = (ie.code==BTN_LEFT?1:(ie.code==BTN_RIGHT?3:2));
+                            ev.mx = curX; ev.my = curY;
+                            ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown; ev.super=superDown;
+                            return true;
+                        }
                         continue;
                     }
+                    // regular key
+                    ev.type = (ie.value==0)?InputEventType::KeyUp:InputEventType::KeyDown;
+                    ev.keycode=ie.code;
+                    ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown; ev.super=superDown;
+                    if(ie.value==0) continue; // only emit KeyDown for actions
                     return true;
+                } else if(ie.type==EV_REL) {
+                    if(ie.code==REL_X) accDx += ie.value;
+                    else if(ie.code==REL_Y) accDy += ie.value;
+                } else if(ie.type==EV_ABS) {
+                    if(ie.code==ABS_X) { curX = ie.value * W / 4096; } // crude scale
+                    else if(ie.code==ABS_Y) { curY = ie.value * H / 4096; }
+                } else if(ie.type==EV_SYN && ie.code==SYN_REPORT) {
+                    if(accDx!=0 || accDy!=0) {
+                        curX += accDx; curY += accDy;
+                        if(curX<0) curX=0; if(curX>=W) curX=W-1;
+                        if(curY<0) curY=0; if(curY>=H) curY=H-1;
+                        accDx=0; accDy=0;
+                        ev.type = InputEventType::MouseMove;
+                        ev.mx = curX; ev.my = curY;
+                        ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown; ev.super=superDown;
+                        return true;
+                    }
                 }
             }
+        }
+        // if we accumulated REL but no SYN (some devices), emit now
+        if(accDx!=0 || accDy!=0) {
+            curX += accDx; curY += accDy;
+            if(curX<0) curX=0; if(curX>=W) curX=W-1;
+            if(curY<0) curY=0; if(curY>=H) curY=H-1;
+            accDx=0; accDy=0;
+            ev.type = InputEventType::MouseMove;
+            ev.mx = curX; ev.my = curY;
+            ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown; ev.super=superDown;
+            return true;
         }
         return false;
     }

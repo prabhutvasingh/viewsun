@@ -38,6 +38,21 @@ public:
         SDL_Event e;
         if (!SDL_PollEvent(&e)) return false;
         if (e.type==SDL_QUIT) { ev.type=InputEventType::KeyDown; ev.keycode=KEY_Q; ev.alt=true; ev.shift=true; return true; }
+        if (e.type==SDL_MOUSEMOTION) {
+            ev.type=InputEventType::MouseMove;
+            ev.mx=e.motion.x; ev.my=e.motion.y;
+            ev.alt=(SDL_GetModState() & KMOD_ALT); ev.shift=(SDL_GetModState() & KMOD_SHIFT);
+            ev.ctrl=(SDL_GetModState() & KMOD_CTRL); ev.super=(SDL_GetModState() & KMOD_GUI);
+            return true;
+        }
+        if (e.type==SDL_MOUSEBUTTONDOWN) {
+            ev.type=InputEventType::MouseButton;
+            ev.button=e.button.button;
+            ev.mx=e.button.x; ev.my=e.button.y;
+            ev.alt=(SDL_GetModState() & KMOD_ALT); ev.shift=(SDL_GetModState() & KMOD_SHIFT);
+            ev.ctrl=(SDL_GetModState() & KMOD_CTRL); ev.super=(SDL_GetModState() & KMOD_GUI);
+            return true;
+        }
         if (e.type==SDL_KEYDOWN || e.type==SDL_KEYUP) {
             ev.type = (e.type==SDL_KEYDOWN)?InputEventType::KeyDown:InputEventType::KeyUp;
             bool alt = (SDL_GetModState() & KMOD_ALT);
@@ -61,6 +76,7 @@ public:
                 case SDLK_p: ev.keycode=KEY_P; break;
                 default: ev.keycode=0; break;
             }
+            if(ev.type==InputEventType::KeyUp) return false; // ignore keyup for SDL
             return true;
         }
         return false;

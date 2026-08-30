@@ -125,9 +125,25 @@ int main(int argc, char** argv) {
 
     bool running=true;
     auto last = std::chrono::steady_clock::now();
+    // init mouse in center
+    wm.mouseX = sw/2; wm.mouseY = sh/2;
     while (running) {
         InputEvent ev{};
         while (backend->pollEvent(ev)) {
+            if (ev.type==InputEventType::MouseMove) {
+                wm.focusAt(ev.mx, ev.my);
+                continue;
+            }
+            if (ev.type==InputEventType::MouseButton) {
+                wm.focusAt(ev.mx, ev.my);
+                if (ev.button==1) {
+                    // left click already focused, retile to update border
+                    wm.tile(sw,sh);
+                } else if (ev.button==3) {
+                    wm.removeFocused(); wm.tile(sw,sh);
+                }
+                continue;
+            }
             if (ev.type!=InputEventType::KeyDown) continue;
             bool alt=ev.alt, shift=ev.shift; bool super=ev.super;
             int k=ev.keycode;

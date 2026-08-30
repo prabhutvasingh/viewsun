@@ -77,6 +77,16 @@ static void drawText(Framebuffer &fb, int x, int y, const std::string &s, uint32
     for(size_t i=0;i<s.size();i++) drawChar(fb, x+i*8, y, s[i], color);
 }
 
+void drawCursor(Framebuffer &fb, int x, int y) {
+    // simple arrow cursor 12x18
+    uint32_t white = 0xFFFFFFFF, black = 0xFF000000;
+    // shadow
+    drawRect(fb, x+1, y+1, 10, 15, black);
+    drawRect(fb, x, y, 10, 15, white);
+    // arrow shape
+    for(int i=0;i<10;i++) drawRect(fb, x+i, y+i, 2, 2, black);
+}
+
 void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp) {
     drawWallpaper(fb, wp, cfg.bg);
     for (auto &w: wm.windows) {
@@ -97,8 +107,10 @@ void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp
     switch(wm.layout){case Layout::MasterStack: status+="MASTER"; break; case Layout::BSP: status+="BSP"; break; case Layout::Grid: status+="GRID"; break;}
     status += " | WINS: " + std::to_string(wm.windows.size());
     status += " | MASTER:" + std::to_string(cfg.master_ratio) + "%";
-    status += " | Alt+Enter new  Alt+q close  Super+P logout  Alt+hjkl focus/resize  Alt+mbg layout  Alt+Shift+q quit";
+    status += " | Alt+Enter new  Alt+q close  Super+P logout  Click focus  Alt+hjkl focus/resize  Alt+mbg layout";
     // crude status bg
     drawRect(fb, 0, fb.height-18, fb.width, 18, 0xFF1D2021);
     drawText(fb, 8, fb.height-14, status, 0xFFA89984);
+    // cursor on top
+    drawCursor(fb, wm.mouseX, wm.mouseY);
 }

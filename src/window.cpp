@@ -32,6 +32,19 @@ void WindowManager::focusNext(int dir) {
     windows[focused].focused = true;
 }
 
+void WindowManager::focusAt(int x, int y) {
+    mouseX = x; mouseY = y;
+    if (windows.empty()) return;
+    for (int i = (int)windows.size()-1; i>=0; --i) {
+        if (windows[i].rect.contains(x,y)) {
+            for (auto &w: windows) w.focused = false;
+            focused = i;
+            windows[focused].focused = true;
+            return;
+        }
+    }
+}
+
 void WindowManager::setLayout(Layout l) { layout = l; }
 
 void WindowManager::resizeMaster(int delta) {
