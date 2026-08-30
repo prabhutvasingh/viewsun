@@ -5,7 +5,7 @@ PKG_DRM := libdrm
 
 SRC_COMMON := src/tiling.cpp src/window.cpp src/renderer.cpp src/renderer_ttf.cpp src/wallpaper.cpp src/main.cpp src/terminal.cpp src/compositor/display_server.cpp
 LIB_CLIENT := lib/viewsun_client.cpp
-EXAMPLES := examples/custom_app examples/custom_term
+EXAMPLES := examples/custom_app examples/custom_term examples/custom_browser examples/custom_files
 SRC_SDL := src/backend_sdl.cpp
 SRC_DRM := src/backend_drm.cpp
 
@@ -75,6 +75,20 @@ $(BUILD)/custom_term.o: examples/custom_term.cpp
 
 examples/custom_term: $(BUILD)/custom_term.o $(CLIENT_OBJ)
 	@mkdir -p examples
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+$(BUILD)/custom_browser.o: examples/custom_browser.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+examples/custom_browser: $(BUILD)/custom_browser.o $(CLIENT_OBJ)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+$(BUILD)/custom_files.o: examples/custom_files.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+examples/custom_files: $(BUILD)/custom_files.o $(CLIENT_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:

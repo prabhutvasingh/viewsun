@@ -59,10 +59,18 @@ static void spawnFileManager() {
 static void spawnCustom(const char* title){
     pid_t pid=fork();
     if(pid==0){
-        // find viewsun custom app binary relative to viewsun
-        const char* app="/home/avi/Projects/viewsun/examples/custom_app";
-        if(access(app,X_OK)!=0) app="/usr/local/lib/viewsun/custom_app";
+        const char* app=nullptr;
+        if(strcmp(title,"browser")==0) app="/home/avi/Projects/viewsun/examples/custom_browser";
+        else if(strcmp(title,"files")==0) app="/home/avi/Projects/viewsun/examples/custom_files";
+        else app="/home/avi/Projects/viewsun/examples/custom_app";
+        if(access(app,X_OK)!=0){
+            if(strcmp(title,"browser")==0) app="/usr/local/lib/viewsun/custom_browser";
+            else if(strcmp(title,"files")==0) app="/usr/local/lib/viewsun/custom_files";
+            else app="/usr/local/lib/viewsun/custom_app";
+        }
+        // custom clients understand title as argv[1]
         execl(app,app,title,(char*)nullptr);
+        // fallback to placeholder if custom client missing
         _exit(127);
     }
 }
