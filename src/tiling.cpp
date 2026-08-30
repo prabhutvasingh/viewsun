@@ -11,28 +11,60 @@ void tileMasterStack(std::vector<Window> &wins, int sw, int sh, const Config &cf
     int nmaster = std::min(n, cfg.master_count);
     int nstack = n - nmaster;
 
-    // master area
-    int availH_master = sh - gap * (nmaster + 1);
-    int h_master = nmaster ? availH_master / nmaster : 0;
-    for (int i = 0; i < nmaster; i++) {
-        wins[i].rect.x = gap;
-        wins[i].rect.y = gap + i * (h_master + gap);
-        wins[i].rect.w = masterW - 2*gap + (n==1 ? gap : 0);
-        if (n==1) wins[i].rect.w = sw - 2*gap;
-        wins[i].rect.h = h_master;
-        if (i == nmaster-1) wins[i].rect.h += availH_master % nmaster; // remainder
+    // smart master area: if many masters, use grid both directions
+    if (nmaster > 0) {
+        if (nmaster <= 2) {
+            int availH_master = sh - gap * (nmaster + 1);
+            int h_master = availH_master / nmaster;
+            for (int i = 0; i < nmaster; i++) {
+                wins[i].rect.x = gap;
+                wins[i].rect.y = gap + i * (h_master + gap);
+                wins[i].rect.w = masterW - 2*gap + (n==1 ? gap : 0);
+                if (n==1) wins[i].rect.w = sw - 2*gap;
+                wins[i].rect.h = h_master;
+                if (i == nmaster-1) wins[i].rect.h += availH_master % nmaster;
+            }
+        } else {
+            // smart grid for master: split both vert + horiz
+            int cols = (int)ceil(sqrt(nmaster));
+            int rows = (int)ceil((double)nmaster / cols);
+            int cellW = (masterW - gap*(cols+1)) / cols;
+            int cellH = (sh - gap*(rows+1)) / rows;
+            for (int i=0;i<nmaster;i++) {
+                int col=i%cols, row=i/cols;
+                wins[i].rect.x = gap + col*(cellW+gap);
+                wins[i].rect.y = gap + row*(cellH+gap);
+                wins[i].rect.w = cellW;
+                wins[i].rect.h = cellH;
+            }
+        }
     }
-    // stack area
+    // smart stack area: both directions
     if (nstack > 0) {
-        int availH_stack = sh - gap * (nstack + 1);
-        int h_stack = availH_stack / nstack;
-        for (int i = 0; i < nstack; i++) {
-            int idx = nmaster + i;
-            wins[idx].rect.x = masterW + gap;
-            wins[idx].rect.y = gap + i * (h_stack + gap);
-            wins[idx].rect.w = stackW - 2*gap;
-            wins[idx].rect.h = h_stack;
-            if (i == nstack-1) wins[idx].rect.h += availH_stack % nstack;
+        if (nstack <= 2) {
+            int availH_stack = sh - gap * (nstack + 1);
+            int h_stack = availH_stack / nstack;
+            for (int i = 0; i < nstack; i++) {
+                int idx = nmaster + i;
+                wins[idx].rect.x = masterW + gap;
+                wins[idx].rect.y = gap + i * (h_stack + gap);
+                wins[idx].rect.w = stackW - 2*gap;
+                wins[idx].rect.h = h_stack;
+                if (i == nstack-1) wins[idx].rect.h += availH_stack % nstack;
+            }
+        } else {
+            int cols = (int)ceil(sqrt(nstack));
+            int rows = (int)ceil((double)nstack / cols);
+            int cellW = (stackW - gap*(cols+1)) / cols;
+            int cellH = (sh - gap*(rows+1)) / rows;
+            for (int i=0;i<nstack;i++) {
+                int idx = nmaster + i;
+                int col=i%cols, row=i/cols;
+                wins[idx].rect.x = masterW + gap + col*(cellW+gap);
+                wins[idx].rect.y = gap + row*(cellH+gap);
+                wins[idx].rect.w = cellW;
+                wins[idx].rect.h = cellH;
+            }
         }
     }
 }
