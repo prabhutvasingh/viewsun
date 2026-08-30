@@ -49,33 +49,38 @@ void Terminal::resize(int cols_, int rows_) {
 
 void Terminal::feed(const char* data, size_t len) {
     for(size_t i=0;i<len;i++) {
-        char c=data[i];
+        unsigned char c=data[i];
         if (c=='\r') continue;
+        // handle ESC sequences first - strip all ANSI
+        if (c==0x1b) {
+            if (i+1 >= len) continue;
+            unsigned char n=data[i+1];
+            if (n=='[') { // CSI \x1b[ ... final 0x40-0x7E
+                i+=2;
+                while(i<len && (data[i] < 0x40 || data[i] > 0x7E)) i++;
+                continue;
+            } else if (n==']') { // OSC \x1b] ... BEL or ST
+                i+=2;
+                while(i<len && data[i]!=0x07 && !(data[i]==0x1b && i+1<len && data[i+1]=='\\')) i++;
+                if (i<len && data[i]==0x07) continue;
+                if (i+1<len && data[i]==0x1b) i++; // skip ST
+                continue;
+            } else if (n=='(' || n==')' || n=='#' || n=='%') { i+=2; continue; } // charset
+            else { i++; continue; } // single ESC
+        }
         if (c=='\n') {
             lines.push_back(curLine);
             curLine.clear();
-            cursorX=0;
-            cursorY = lines.size()-1;
-            if ((int)lines.size() > rows+100) { // scroll limit
-                lines.erase(lines.begin());
-                cursorY--;
-            }
+            cursorX=0; cursorY = lines.size()-1;
+            if ((int)lines.size() > rows+200) { lines.erase(lines.begin()); cursorY--; }
         } else if (c=='\b' || c==127) {
             if (!curLine.empty()) curLine.pop_back();
         } else if (c>=32 && c<127) {
             curLine.push_back(c);
-            if ((int)curLine.size() >= cols) {
-                lines.push_back(curLine);
-                curLine.clear();
-            }
+            if ((int)curLine.size() >= cols) { lines.push_back(curLine); curLine.clear(); }
         } else if (c=='\t') {
             curLine += "    ";
-        }
-        // ignore CSI sequences naively: if ESC, skip until letter
-        if (c=='\x1b' && i+1<len && data[i+1]=='[') {
-            i+=2;
-            while(i<len && data[i]!='m' && data[i]!='H' && data[i]!='J' && data[i]!='K' && data[i]!='h' && data[i]!='l') i++;
-        }
+        } else if (c==0x07) { /* BEL ignore */ }
     }
 }
 
