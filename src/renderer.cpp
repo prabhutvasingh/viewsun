@@ -80,17 +80,21 @@ void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp
         ViewsunBuffer* cbuf = nullptr;
         if (isCustom) cbuf = ds.getBufferForWindow(w.id);
         if (cbuf && cbuf->pixels) {
-            // blit buffer into window interior (below title bar)
+            // true RGB blit - 32-bit XRGB8888
             int dstX = w.rect.x, dstY = w.rect.y+16, dstW = w.rect.w, dstH = w.rect.h-16;
             int srcW = cbuf->width, srcH = cbuf->height;
-            // simple nearest-neighbor blit, clip
+            int srcStridePx = cbuf->stride/4;
             for(int y=0;y<dstH && y<srcH; y++){
                 for(int x=0;x<dstW && x<srcW; x++){
                     int fx = dstX+x, fy = dstY+y;
-                    if(fx>=0&&fx<fb.width&&fy>=0&&fy<fb.height) fb.pixels[fy*fb.stride+fx] = cbuf->pixels[y*cbuf->stride/4 + x];
+                    if(fx>=0&&fx<fb.width&&fy>=0&&fy<fb.height) {
+                        uint32_t src = cbuf->pixels[y*srcStridePx + x];
+                        // ensure true RGB 0xFFRRGGBB - force opaque
+                        src |= 0xFF000000;
+                        fb.pixels[fy*fb.stride+fx] = src;
+                    }
                 }
             }
-            // still draw border
             drawRectBorder(fb, w.rect, borderCol, cfg.border);
         } else {
             drawRect(fb, w.rect.x, w.rect.y, w.rect.w, w.rect.h, w.color);

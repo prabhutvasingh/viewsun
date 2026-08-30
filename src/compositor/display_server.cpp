@@ -14,9 +14,7 @@ ViewsunBuffer::~ViewsunBuffer(){ detach(); }
 bool ViewsunBuffer::attach(int fd_, uint32_t w, uint32_t h, uint32_t stride_) {
     detach();
     fd=fd_; width=w; height=h; stride=stride_;
-    size = stride * height * 4;
-    // assume stride is in pixels*? Actually stride is bytes? we pass bytes
-    // Our protocol stride is bytes
+    size = stride * height; // stride already bytes (w*4)
     void* map = mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
     if(map==MAP_FAILED) { perror("mmap buffer"); return false; }
     pixels = (uint32_t*)map;

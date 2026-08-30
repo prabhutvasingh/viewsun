@@ -6,7 +6,7 @@
 int WindowManager::addWindow(const std::string &title) {
     Window w;
     w.id = next_id++;
-    w.color = cfg.win_colors[(w.id-1) % 8];
+    w.color = Config::trueColor(w.id);
     w.title = title.empty() ? "win" + std::to_string(w.id) : title;
     w.focused = false;
     // tile wherever mouse hovers: left half -> left master (stack left), right half -> right stack
