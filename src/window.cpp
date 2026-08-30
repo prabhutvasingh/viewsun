@@ -7,8 +7,16 @@ int WindowManager::addWindow(const std::string &title) {
     w.color = cfg.win_colors[(w.id-1) % 8];
     w.title = title.empty() ? "win" + std::to_string(w.id) : title;
     w.focused = false;
-    windows.push_back(w);
-    focused = windows.size()-1;
+    // insert near mouse hover: after focused window, so tiling appears where you hover
+    int insertAt = focused>=0 ? focused+1 : windows.size();
+    if (insertAt<0) insertAt=0;
+    if (insertAt> (int)windows.size()) insertAt=windows.size();
+    // if mouse is over empty space, append to end
+    bool hoverEmpty = true;
+    for (auto &win: windows) if (win.rect.contains(mouseX, mouseY)) hoverEmpty=false;
+    if (hoverEmpty) insertAt = windows.size();
+    windows.insert(windows.begin()+insertAt, w);
+    focused = insertAt;
     for (auto &win: windows) win.focused = false;
     windows[focused].focused = true;
     return w.id;
@@ -55,6 +63,27 @@ void WindowManager::resizeMaster(int delta) {
 
 void WindowManager::tile(int sw, int sh) {
     if (windows.empty()) return;
+    // mouse-hover-driven tiling: window under cursor becomes master/first
+    // so new windows tile wherever mouse hovers, not just to the right
+    if (focused>=0 && focused < (int)windows.size()) {
+        // if mouse is inside a different window than focused, focusAt already updated focused
+        // bring focused to front so hovered area becomes master
+        if (focused != 0) {
+            Window fw = windows[focused];
+            windows.erase(windows.begin()+focused);
+            windows.insert(windows.begin(), fw);
+            focused = 0;
+        }
+    } else if (!windows.empty()) {
+        // fallback: find window under mouse and make it master
+        for (int i=(int)windows.size()-1;i>=0;--i) if(windows[i].rect.contains(mouseX,mouseY)) {
+            Window fw = windows[i];
+            windows.erase(windows.begin()+i);
+            windows.insert(windows.begin(), fw);
+            focused=0;
+            break;
+        }
+    }
     switch(layout) {
         case Layout::MasterStack: tileMasterStack(windows, sw, sh, cfg); break;
         case Layout::BSP: tileBSP(windows, sw, sh, cfg); break;
