@@ -32,9 +32,14 @@ void drawRectBorder(Framebuffer &fb, Rect r, uint32_t color, int border) {
     drawRect(fb, r.x+r.w-border, r.y, border, r.h, color);
 }
 
-static void drawChar(Framebuffer &fb, int x, int y, char c, uint32_t color) {
+static int drawChar(Framebuffer &fb, int x, int y, char c, uint32_t color) {
+    // try TTF first - if font loaded, drawCharTTF handles drawing and returns advance
+    // check if TTF available by trying to draw; if returns 0 means fallback
+    int adv = drawCharTTF(fb, x, y, c, color);
+    if (adv != 0) return adv;
+    // fallback bitmap 8x8
     unsigned char uc = (unsigned char)c;
-    if (uc>=128) return;
+    if (uc>=128) return 8;
     auto &g = font8x8_basic[uc];
     for(int row=0;row<8;row++) {
         unsigned char bits = g[row];
@@ -45,10 +50,12 @@ static void drawChar(Framebuffer &fb, int x, int y, char c, uint32_t color) {
             }
         }
     }
+    return 8;
 }
 
 static void drawText(Framebuffer &fb, int x, int y, const std::string &s, uint32_t color) {
-    for(size_t i=0;i<s.size();i++) drawChar(fb, x+i*8, y, s[i], color);
+    int curX = x;
+    for(char c: s) curX += drawChar(fb, curX, y, c, color);
 }
 
 void drawCursor(Framebuffer &fb, int x, int y) {

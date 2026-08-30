@@ -11,9 +11,9 @@ void tileMasterStack(std::vector<Window> &wins, int sw, int sh, const Config &cf
     int nmaster = std::min(n, cfg.master_count);
     int nstack = n - nmaster;
 
-    // smart master area: if many masters, use grid both directions
+    // smart master area: fill without empty - vertical for 3, grid only 4+
     if (nmaster > 0) {
-        if (nmaster <= 2) {
+        if (nmaster <= 3) {
             int availH_master = sh - gap * (nmaster + 1);
             int h_master = availH_master / nmaster;
             for (int i = 0; i < nmaster; i++) {
@@ -25,23 +25,24 @@ void tileMasterStack(std::vector<Window> &wins, int sw, int sh, const Config &cf
                 if (i == nmaster-1) wins[i].rect.h += availH_master % nmaster;
             }
         } else {
-            // smart grid for master: split both vert + horiz
+            // smart grid for master: fill without empty - stretch last row
             int cols = (int)ceil(sqrt(nmaster));
             int rows = (int)ceil((double)nmaster / cols);
-            int cellW = (masterW - gap*(cols+1)) / cols;
             int cellH = (sh - gap*(rows+1)) / rows;
             for (int i=0;i<nmaster;i++) {
-                int col=i%cols, row=i/cols;
-                wins[i].rect.x = gap + col*(cellW+gap);
+                int row=i/cols, col=i%cols;
+                int colsInRow = std::min(cols, nmaster - row*cols);
+                int cellWrow = (masterW - gap*(colsInRow+1)) / colsInRow;
+                wins[i].rect.x = gap + col*(cellWrow+gap);
                 wins[i].rect.y = gap + row*(cellH+gap);
-                wins[i].rect.w = cellW;
+                wins[i].rect.w = cellWrow;
                 wins[i].rect.h = cellH;
             }
         }
     }
-    // smart stack area: both directions
+    // smart stack area: both directions - fill without empty (<=3 vertical, 4+ grid)
     if (nstack > 0) {
-        if (nstack <= 2) {
+        if (nstack <= 3) {
             int availH_stack = sh - gap * (nstack + 1);
             int h_stack = availH_stack / nstack;
             for (int i = 0; i < nstack; i++) {
@@ -55,14 +56,15 @@ void tileMasterStack(std::vector<Window> &wins, int sw, int sh, const Config &cf
         } else {
             int cols = (int)ceil(sqrt(nstack));
             int rows = (int)ceil((double)nstack / cols);
-            int cellW = (stackW - gap*(cols+1)) / cols;
             int cellH = (sh - gap*(rows+1)) / rows;
             for (int i=0;i<nstack;i++) {
                 int idx = nmaster + i;
-                int col=i%cols, row=i/cols;
-                wins[idx].rect.x = masterW + gap + col*(cellW+gap);
+                int row=i/cols, col=i%cols;
+                int colsInRow = std::min(cols, nstack - row*cols);
+                int cellWrow = (stackW - gap*(colsInRow+1)) / colsInRow;
+                wins[idx].rect.x = masterW + gap + col*(cellWrow+gap);
                 wins[idx].rect.y = gap + row*(cellH+gap);
-                wins[idx].rect.w = cellW;
+                wins[idx].rect.w = cellWrow;
                 wins[idx].rect.h = cellH;
             }
         }
@@ -110,14 +112,14 @@ void tileGrid(std::vector<Window> &wins, int sw, int sh, const Config &cfg) {
     int cols = (int)ceil(sqrt(n));
     int rows = (int)ceil((double)n / cols);
     int gap = cfg.gap;
-    int cellW = (sw - gap*(cols+1)) / cols;
     int cellH = (sh - gap*(rows+1)) / rows;
     for (int i=0;i<n;i++) {
-        int col = i % cols;
-        int row = i / cols;
-        wins[i].rect.x = gap + col*(cellW+gap);
+        int row=i/cols, col=i%cols;
+        int colsInRow = std::min(cols, n - row*cols);
+        int cellWrow = (sw - gap*(colsInRow+1)) / colsInRow;
+        wins[i].rect.x = gap + col*(cellWrow+gap);
         wins[i].rect.y = gap + row*(cellH+gap);
-        wins[i].rect.w = cellW;
+        wins[i].rect.w = cellWrow;
         wins[i].rect.h = cellH;
     }
 }
