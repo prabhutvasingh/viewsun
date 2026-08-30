@@ -33,16 +33,13 @@ void drawRectBorder(Framebuffer &fb, Rect r, uint32_t color, int border) {
 }
 
 static void drawChar(Framebuffer &fb, int x, int y, char c, uint32_t color) {
-    if (c <0 || c>=128) return;
-    // font8x8_basic from public domain VGA font, covers full ASCII 0-127
-    auto &g = font8x8_basic[(int)c];
-    // if undefined, use blank
-    bool defined = false;
-    for(int i=0;i<8;i++) if(g[i]) defined=true;
-    if(!defined) return;
+    unsigned char uc = (unsigned char)c;
+    if (uc>=128) return;
+    auto &g = font8x8_basic[uc];
     for(int row=0;row<8;row++) {
+        unsigned char bits = g[row];
         for(int col=0;col<8;col++) {
-            if (g[row] & (1<<(7-col))) {
+            if (bits & (1 << (7-col))) {
                 int px = x+col, py = y+row;
                 if(px>=0 && px<fb.width && py>=0 && py<fb.height) fb.pixels[py*fb.stride+px]=color;
             }
