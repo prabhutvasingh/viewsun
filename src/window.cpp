@@ -41,7 +41,12 @@ int WindowManager::addTerminal() {
     w.term = std::make_unique<Terminal>();
     int cols = 80, rows = 24;
     if (lastSw>0 && lastSh>0) { cols = (lastSw/2) / 8; rows = (lastSh/3) / 8; if (cols<20) cols=80; if (rows<5) rows=24; }
-    w.term->spawn(cols, rows);
+    if (!w.term->spawn(cols, rows)) {
+        // spawn failed, fallback to placeholder
+        w.isTerm = false;
+        w.type = WinType::Placeholder;
+        w.term.reset();
+    }
     bool left = (lastSw > 0 && mouseX < lastSw/2);
     int insertAt = left ? std::min(cfg.master_count, (int)windows.size()) : windows.size();
     windows.insert(windows.begin()+insertAt, std::move(w));
@@ -162,13 +167,18 @@ void WindowManager::tile(int sw, int sh) {
     }
     for (auto &w: windows) w.focused = false;
     if (focused>=0 && focused < (int)windows.size()) windows[focused].focused = true;
-    // resize terms to new rect
-    for (auto &w: windows) if (w.isTerm && w.term) {
+    // resize terms to new rect - safe guard null/dangling
+    for (auto &w: windows) if (w.isTerm && w.term && w.term->masterFd>=0) {
+        // ensure rect valid before resize
+        if (w.rect.w < 16 || w.rect.h < 24) continue;
         int cols = (w.rect.w - 4) / 8;
         int rows = (w.rect.h - 20) / 8;
         if (cols<10) cols=10;
         if (rows<2) rows=2;
-        if (cols!=w.term->cols || rows!=w.term->rows) w.term->resize(cols, rows);
+        if (cols!=w.term->cols || rows!=w.term->rows) {
+            // protect against use-after-move corruption
+            if (w.term) w.term->resize(cols, rows);
+        }
     }
 }
 

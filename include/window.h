@@ -8,13 +8,18 @@ enum class WinType { Placeholder, Terminal, Browser, FileManager };
 
 struct Window {
     int id;
-    Rect rect;
-    uint32_t color;
+    Rect rect{};
+    uint32_t color{};
     bool focused = false;
     std::string title;
     WinType type = WinType::Placeholder;
     bool isTerm = false;
     std::unique_ptr<Terminal> term;
+    Window() = default;
+    Window(Window&&) = default;
+    Window& operator=(Window&&) = default;
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
     // browser
     std::string url = "https://google.com";
     // file manager
