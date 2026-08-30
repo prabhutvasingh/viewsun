@@ -43,7 +43,7 @@ static void compositor_create_surface(wl_client*, wl_resource *res, uint32_t id)
 }
 static void compositor_create_region(wl_client*, wl_resource*, uint32_t){}
 
-static const wl_compositor_interface compositor_impl{compositor_create_surface, compositor_create_region};
+static const struct wl_compositor_interface compositor_impl{compositor_create_surface, compositor_create_region};
 
 // wl_shm
 static void shm_create_pool(wl_client *cl, wl_resource *res, uint32_t id, int fd, int32_t size){
@@ -53,7 +53,7 @@ static void shm_create_pool(wl_client *cl, wl_resource *res, uint32_t id, int fd
     wl_resource *poolRes=wl_resource_create(cl, &wl_shm_pool_interface, wl_resource_get_version(res), id);
     wl_resource_set_user_data(poolRes, pool);
 }
-static const wl_shm_interface shm_impl{shm_create_pool};
+static const struct wl_shm_interface shm_impl{shm_create_pool};
 
 static void shm_pool_create_buffer(wl_client*, wl_resource *res, uint32_t id, int32_t offset, int32_t w, int32_t h, int32_t stride, uint32_t){
     WaylandBuffer *pool=(WaylandBuffer*)wl_resource_get_user_data(res);
@@ -69,7 +69,7 @@ static void shm_pool_create_buffer(wl_client*, wl_resource *res, uint32_t id, in
 static void shm_pool_destroy(wl_client*, wl_resource *r){ auto *p=(WaylandBuffer*)wl_resource_get_user_data(r); if(p){ if(p->data) munmap(p->data,p->size); close(p->fd); delete p; } wl_resource_destroy(r); }
 static void shm_pool_resize(wl_client*, wl_resource*, int32_t){}
 
-static const wl_shm_pool_interface shm_pool_impl{shm_pool_create_buffer, shm_pool_destroy, shm_pool_resize};
+static const struct wl_shm_pool_interface shm_pool_impl{shm_pool_create_buffer, shm_pool_destroy, shm_pool_resize};
 
 // xdg_wm_base
 static void xdg_get_xdg_surface(wl_client *cl, wl_resource *res, uint32_t id, wl_resource *surfRes){
@@ -81,7 +81,7 @@ static void xdg_get_xdg_surface(wl_client *cl, wl_resource *res, uint32_t id, wl
 }
 static void xdg_pong(wl_client*, wl_resource*, uint32_t){}
 
-static const xdg_wm_base_interface xdg_impl{xdg_get_xdg_surface, xdg_pong};
+static const struct xdg_wm_base_interface xdg_impl{xdg_get_xdg_surface, xdg_pong};
 
 // xdg_surface
 static void xdg_surface_get_toplevel(wl_client *cl, wl_resource *res, uint32_t id){
@@ -117,7 +117,7 @@ static void xdg_surface_ack_configure(wl_client*, wl_resource*, uint32_t){}
 static void xdg_surface_set_window_geometry(wl_client*, wl_resource*, int32_t,int32_t,int32_t,int32_t){}
 static void xdg_surface_destroy(wl_client*, wl_resource *r){ wl_resource_destroy(r); }
 
-static const xdg_surface_interface xdg_surface_impl{xdg_surface_destroy, xdg_surface_get_toplevel, xdg_surface_ack_configure, xdg_surface_set_window_geometry};
+static const struct xdg_surface_interface xdg_surface_impl{xdg_surface_destroy, xdg_surface_get_toplevel, xdg_surface_ack_configure, xdg_surface_set_window_geometry};
 
 // xdg_toplevel
 static void xdg_toplevel_set_title(wl_client*, wl_resource *res, const char *title){
@@ -137,7 +137,7 @@ static void xdg_toplevel_set_fullscreen(wl_client*, wl_resource*, wl_resource*){
 static void xdg_toplevel_unset_fullscreen(wl_client*, wl_resource*){}
 static void xdg_toplevel_set_minimized(wl_client*, wl_resource*){}
 
-static const xdg_toplevel_interface xdg_toplevel_impl{
+static const struct xdg_toplevel_interface xdg_toplevel_impl{
     xdg_toplevel_set_title, xdg_toplevel_set_app_id, xdg_toplevel_show_window_menu,
     xdg_toplevel_move, xdg_toplevel_resize, xdg_toplevel_set_max_size, xdg_toplevel_set_min_size,
     xdg_toplevel_set_maximized, xdg_toplevel_unset_maximized, xdg_toplevel_set_fullscreen,
@@ -195,7 +195,7 @@ static void surface_set_buffer_scale(wl_client*, wl_resource*, int32_t){}
 static void surface_damage_buffer(wl_client*, wl_resource*, int32_t,int32_t,int32_t,int32_t){}
 static void surface_offset(wl_client*, wl_resource*, int32_t,int32_t){}
 
-static const wl_surface_interface surface_impl{
+static const struct wl_surface_interface surface_impl{
     surface_attach, surface_damage, surface_frame, surface_set_opaque_region,
     surface_set_input_region, surface_commit, surface_set_buffer_transform,
     surface_set_buffer_scale, surface_damage_buffer, surface_offset

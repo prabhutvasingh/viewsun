@@ -169,8 +169,6 @@ int main(int argc, char** argv) {
     backend->getScreenSize(sw, sh);
     printf("viewsun: running %dx%d backend=%s wallpaper=%s\n", sw, sh, cfg.backend.c_str(), cfg.wallpaper_path.empty()?"(none)":cfg.wallpaper_path.c_str());
 
-    // clear stale Wayland env from previous Wayland host (avoid proxy error)
-    unsetenv("WAYLAND_DISPLAY");
     WindowManager wm;
     wm.cfg = cfg;
     // init custom display server (viewsun compositor) - from scratch, no Wayland
@@ -231,7 +229,7 @@ int main(int argc, char** argv) {
             int k=ev.keycode;
             if (super && k==KEY_P) { running=false; } // Windows+P logout
             else if (super && k==KEY_ENTER) { wm.addTerminal(); wm.tile(sw,sh); }
-            else if (super && k==KEY_W) { spawnCustom("browser"); }
+            else if (super && k==KEY_W) { spawnFirefoxWayland(); }
             else if (super && k==KEY_E) { spawnCustom("files"); }
             else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n
