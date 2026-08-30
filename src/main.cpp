@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <sys/wait.h>
 #include <linux/input-event-codes.h>
 #include <chrono>
 #include <thread>
@@ -22,9 +23,8 @@ static void print_help(const char* prog) {
     printf("  -h, --help           show this help\n");
     printf("  -v, --version        show version\n");
     printf("\nControls:\n");
-    printf("  Alt+Enter (or Ctrl+Enter/Super+Enter, or Ctrl+n) spawn window\n");
-    printf("  Alt+q (or Ctrl+q/Super+q, or Ctrl+c/x, or right-click) close\n");
-    printf("  Alt+Shift+q quit  Super+P (Windows+P) logout\n");
+    printf("  Super+Enter open kitty  Super+w browser  Super+e file manager  Super+P logout\n");
+    printf("  Alt+Enter (or Ctrl+n) spawn placeholder  Alt+q close  Alt+Shift+q quit\n");
     printf("  j/k focus  h/l resize master  m/b/g layouts (with Alt/Ctrl/Super, or plain)\n");
     printf("  Mouse: left-click focus, right-click close, move focuses\n");
     printf("\nExamples:\n");
@@ -33,6 +33,28 @@ static void print_help(const char* prog) {
     printf("  sudo viewsun --backend drm -w /usr/share/viewsun/wallpaper.png\n");
 }
 
+static void spawn(const char *cmd) {
+    pid_t pid = fork();
+    if (pid==0) {
+        // child - detach
+        setsid();
+        execl("/bin/sh","sh","-c",cmd,(char*)nullptr);
+        _exit(127);
+    } else if (pid>0) {
+        // reap quickly without blocking
+        int status; waitpid(pid,&status,WNOHANG);
+    }
+}
+static void spawnKitty() {
+    // try kitty, fallback to gnome-terminal, xterm, foot
+    spawn("kitty 2>/dev/null || gnome-terminal 2>/dev/null || xterm 2>/dev/null || foot 2>/dev/null &");
+}
+static void spawnBrowser() {
+    spawn("xdg-open https://google.com 2>/dev/null || firefox 2>/dev/null || chromium 2>/dev/null || google-chrome 2>/dev/null &");
+}
+static void spawnFileManager() {
+    spawn("xdg-open \"$HOME\" 2>/dev/null || nautilus \"$HOME\" 2>/dev/null || dolphin \"$HOME\" 2>/dev/null || thunar \"$HOME\" 2>/dev/null || pcmanfm \"$HOME\" 2>/dev/null &");
+}
 static void print_version() { printf("viewsun %s\n", VIEWSUN_VERSION); }
 
 int main(int argc, char** argv) {
@@ -151,9 +173,10 @@ int main(int argc, char** argv) {
             if (ev.type!=InputEventType::KeyDown) continue;
             bool alt=ev.alt, shift=ev.shift; bool super=ev.super; bool ctrl=ev.ctrl;
             int k=ev.keycode;
-            // Debug log for GNOME: show key if unknown
-            // fprintf(stderr,"key %d alt=%d super=%d ctrl=%d shift=%d\n",k,alt,super,ctrl,shift);
             if (super && k==KEY_P) { running=false; } // Windows+P logout
+            else if (super && k==KEY_ENTER) { spawnKitty(); }
+            else if (super && k==KEY_W) { spawnBrowser(); }
+            else if (super && k==KEY_E) { spawnFileManager(); }
             else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n
             else if ((alt && shift) && k==KEY_Q) { running=false; }

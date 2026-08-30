@@ -2,6 +2,8 @@
 #include "../include/font8x8.h"
 #include <algorithm>
 #include <cstring>
+#include <ctime>
+#include <cstdio>
 
 void fill(Framebuffer &fb, uint32_t color) {
     for (int y=0;y<fb.height;y++) {
@@ -77,15 +79,28 @@ void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp
         // inner border for title
         drawRectBorder(fb, {w.rect.x, w.rect.y, w.rect.w, 16}, borderCol, 1);
     }
-    // status line bottom
+    // status line bottom with time/date
+    char timebuf[64];
+    time_t now = time(nullptr);
+    struct tm *tm = localtime(&now);
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %a %H:%M:%S", tm);
     std::string status = " LAYOUT: ";
     switch(wm.layout){case Layout::MasterStack: status+="MASTER"; break; case Layout::BSP: status+="BSP"; break; case Layout::Grid: status+="GRID"; break;}
     status += " | WINS: " + std::to_string(wm.windows.size());
-    status += " | MASTER:" + std::to_string(cfg.master_ratio) + "%";
-    status += " | Alt+Enter new  Alt+q close  Super+P logout  Click focus  Alt+hjkl focus/resize  Alt+mbg layout";
+    status += " | ";
+    status += timebuf;
+    status += " | Super+Enter kitty Super+W browser Super+E files Super+P logout";
     // crude status bg
     drawRect(fb, 0, fb.height-18, fb.width, 18, 0xFF1D2021);
     drawText(fb, 8, fb.height-14, status, 0xFFA89984);
+    // right-align full date if space (fallback)
+    // ensure time visible even on small widths by truncating status left
+    if ((int)status.size()*8 > fb.width-16) {
+        // truncate left part, keep time at end
+        std::string shortStatus = std::string(timebuf) + " | WINS:" + std::to_string(wm.windows.size());
+        drawRect(fb, 0, fb.height-18, fb.width, 18, 0xFF1D2021);
+        drawText(fb, 8, fb.height-14, shortStatus, 0xFFA89984);
+    }
     // cursor on top
     drawCursor(fb, wm.mouseX, wm.mouseY);
 }
