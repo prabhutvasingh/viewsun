@@ -68,9 +68,19 @@ static void spawnCustom(const char* title){
             else if(strcmp(title,"files")==0) app="/usr/local/lib/viewsun/custom_files";
             else app="/usr/local/lib/viewsun/custom_app";
         }
-        // custom clients understand title as argv[1]
         execl(app,app,title,(char*)nullptr);
-        // fallback to placeholder if custom client missing
+        _exit(127);
+    }
+}
+static void spawnFirefoxWayland(){
+    pid_t pid=fork();
+    if(pid==0){
+        setenv("WAYLAND_DISPLAY","viewsun-wayland",1);
+        setenv("MOZ_ENABLE_WAYLAND","1",1);
+        setenv("GDK_BACKEND","wayland",1);
+        // try firefox, fallback to custom browser
+        execlp("firefox","firefox","--new-window","https://google.com",(char*)nullptr);
+        execl("/home/avi/Projects/viewsun/examples/custom_browser","custom_browser","browser",(char*)nullptr);
         _exit(127);
     }
 }
@@ -159,9 +169,11 @@ int main(int argc, char** argv) {
     backend->getScreenSize(sw, sh);
     printf("viewsun: running %dx%d backend=%s wallpaper=%s\n", sw, sh, cfg.backend.c_str(), cfg.wallpaper_path.empty()?"(none)":cfg.wallpaper_path.c_str());
 
+    // clear stale Wayland env from previous Wayland host (avoid proxy error)
+    unsetenv("WAYLAND_DISPLAY");
     WindowManager wm;
     wm.cfg = cfg;
-    // init custom display server (viewsun compositor)
+    // init custom display server (viewsun compositor) - from scratch, no Wayland
     auto &ds = DisplayServer::instance();
     if (!ds.init(&wm, sw, sh)) fprintf(stderr,"viewsun: display server failed (custom clients disabled)\n");
     // keep wallpaper path in config for renderer fallback color

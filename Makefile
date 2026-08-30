@@ -53,6 +53,10 @@ $(BUILD)/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(BUILD)/%.o: src/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(shell pkg-config --cflags wayland-server) -c $< -o $@
+
 $(BUILD)/viewsun_client.o: lib/viewsun_client.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
