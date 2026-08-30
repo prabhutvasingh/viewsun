@@ -27,4 +27,5 @@ public:
     void tile(int screenW, int screenH);
     Window* getFocused();
     int mouseX = 0, mouseY = 0;
+    int lastSw = 0, lastSh = 0;
 };
