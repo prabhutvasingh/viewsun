@@ -23,7 +23,7 @@ static void print_help(const char* prog) {
     printf("  -v, --version        show version\n");
     printf("\nControls:\n");
     printf("  Alt+Enter  spawn window   Alt+q close   Alt+Shift+q quit\n");
-    printf("  Alt+j/k    focus next/prev   Alt+h/l resize master  Alt+m/b/g layouts\n");
+    printf("  Super+P (Windows+P) logout  Alt+j/k focus next/prev  Alt+h/l resize master  Alt+m/b/g layouts\n");
     printf("\nExamples:\n");
     printf("  viewsun -w ~/wallpaper.jpg\n");
     printf("  viewsun --backend sdl -w /tmp/bg.png\n");
@@ -129,9 +129,10 @@ int main(int argc, char** argv) {
         InputEvent ev{};
         while (backend->pollEvent(ev)) {
             if (ev.type!=InputEventType::KeyDown) continue;
-            bool alt=ev.alt, shift=ev.shift;
+            bool alt=ev.alt, shift=ev.shift; bool super=ev.super;
             int k=ev.keycode;
-            if (alt && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
+            if (super && k==KEY_P) { running=false; } // Windows+P logout
+            else if (alt && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if (alt && shift && k==KEY_Q) { running=false; }
             else if (alt && k==KEY_Q) { wm.removeFocused(); wm.tile(sw,sh); }
             else if (alt && k==KEY_J) { wm.focusNext(1); wm.tile(sw,sh); }

@@ -97,7 +97,7 @@ void render(Framebuffer &fb, WindowManager &wm, const Config &cfg, Wallpaper &wp
     switch(wm.layout){case Layout::MasterStack: status+="MASTER"; break; case Layout::BSP: status+="BSP"; break; case Layout::Grid: status+="GRID"; break;}
     status += " | WINS: " + std::to_string(wm.windows.size());
     status += " | MASTER:" + std::to_string(cfg.master_ratio) + "%";
-    status += " | Alt+Enter new  Alt+q close  Alt+hjkl focus/resize  Alt+mbg layout  Alt+Shift+q quit";
+    status += " | Alt+Enter new  Alt+q close  Super+P logout  Alt+hjkl focus/resize  Alt+mbg layout  Alt+Shift+q quit";
     // crude status bg
     drawRect(fb, 0, fb.height-18, fb.width, 18, 0xFF1D2021);
     drawText(fb, 8, fb.height-14, status, 0xFFA89984);

@@ -43,7 +43,8 @@ public:
             bool alt = (SDL_GetModState() & KMOD_ALT);
             bool shift = (SDL_GetModState() & KMOD_SHIFT);
             bool ctrl = (SDL_GetModState() & KMOD_CTRL);
-            ev.alt=alt; ev.shift=shift; ev.ctrl=ctrl;
+            bool super = (SDL_GetModState() & KMOD_GUI);
+            ev.alt=alt; ev.shift=shift; ev.ctrl=ctrl; ev.super=super;
             SDL_Keycode k = e.key.keysym.sym;
             // map to linux KEY_ codes for shared logic
             switch(k) {
@@ -57,6 +58,7 @@ public:
                 case SDLK_b: ev.keycode=KEY_B; break;
                 case SDLK_g: ev.keycode=KEY_G; break;
                 case SDLK_f: ev.keycode=KEY_F; break;
+                case SDLK_p: ev.keycode=KEY_P; break;
                 default: ev.keycode=0; break;
             }
             return true;

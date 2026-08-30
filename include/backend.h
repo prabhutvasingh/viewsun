@@ -13,7 +13,7 @@ enum class InputEventType { KeyDown, KeyUp, MouseMove, MouseButton };
 struct InputEvent {
     InputEventType type;
     int keycode = 0; // linux input.h KEY_*
-    bool alt = false, shift = false, ctrl = false;
+    bool alt = false, shift = false, ctrl = false, super = false;
     int mx = 0, my = 0;
     int button = 0;
 };

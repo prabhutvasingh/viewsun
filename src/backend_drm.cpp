@@ -130,16 +130,14 @@ public:
                     // For v0.1 require Alt held for combos - we check current state via EV_KEY history not perfect, use ie.value
                     // Instead, caller will track modifiers via separate logic; we set alt if KEY_LEFTALT/RIGHTALT is down
                     // Quick hack: assume alt if previous event had alt? Leave false and let main handle via state cache
-                    ev.alt=false; ev.shift=false; ev.ctrl=false;
-                    // we need to expose raw mod state: we set based on key itself being alt? Better to keep global static
-                    static bool altDown=false, shiftDown=false, ctrlDown=false;
+                    ev.alt=false; ev.shift=false; ev.ctrl=false; ev.super=false;
+                    static bool altDown=false, shiftDown=false, ctrlDown=false, superDown=false;
                     if(ie.code==KEY_LEFTALT || ie.code==KEY_RIGHTALT) altDown = (ie.value!=0);
                     if(ie.code==KEY_LEFTSHIFT || ie.code==KEY_RIGHTSHIFT) shiftDown=(ie.value!=0);
                     if(ie.code==KEY_LEFTCTRL || ie.code==KEY_RIGHTCTRL) ctrlDown=(ie.value!=0);
-                    ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown;
-                    // only emit for non-modifier or keydown? emit all
-                    if(ie.code==KEY_LEFTALT || ie.code==KEY_RIGHTALT || ie.code==KEY_LEFTSHIFT || ie.code==KEY_RIGHTSHIFT || ie.code==KEY_LEFTCTRL || ie.code==KEY_RIGHTCTRL) {
-                        // don't treat modifier alone as action, but still need to update state - skip emitting
+                    if(ie.code==KEY_LEFTMETA || ie.code==KEY_RIGHTMETA) superDown=(ie.value!=0);
+                    ev.alt=altDown; ev.shift=shiftDown; ev.ctrl=ctrlDown; ev.super=superDown;
+                    if(ie.code==KEY_LEFTALT || ie.code==KEY_RIGHTALT || ie.code==KEY_LEFTSHIFT || ie.code==KEY_RIGHTSHIFT || ie.code==KEY_LEFTCTRL || ie.code==KEY_RIGHTCTRL || ie.code==KEY_LEFTMETA || ie.code==KEY_RIGHTMETA) {
                         continue;
                     }
                     return true;

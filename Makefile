@@ -57,12 +57,19 @@ install: all
 	install -Dm644 man/viewsun.1 $(DESTDIR)$(MANDIR)/man1/viewsun.1
 	install -Dm644 LICENSE $(DESTDIR)$(DATADIR)/LICENSE 2>/dev/null || true
 	install -Dm644 README.md $(DESTDIR)$(DATADIR)/README.md
+	install -Dm644 sessions/viewsun.desktop $(DESTDIR)/usr/share/xsessions/viewsun.desktop
+	install -Dm644 sessions/viewsun.desktop $(DESTDIR)/usr/share/wayland-sessions/viewsun.desktop
+	install -Dm755 sessions/viewsun-login.sh $(DESTDIR)$(DATADIR)/viewsun-login.sh
 	@echo "viewsun installed to $(DESTDIR)$(BINDIR)/viewsun"
 	@echo "Usage: viewsun -w /path/to/wallpaper.png"
+	@echo "Login sessions installed - select Viewsun at display manager"
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/viewsun
 	rm -f $(DESTDIR)$(MANDIR)/man1/viewsun.1
+	rm -f $(DESTDIR)/usr/share/xsessions/viewsun.desktop
+	rm -f $(DESTDIR)/usr/share/wayland-sessions/viewsun.desktop
+	rm -f $(DESTDIR)$(DATADIR)/viewsun-login.sh
 
 # arch package
 pkg: all

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Viewsun
+Comment=Fully custom tiling compositor - no X11/Wayland - DRM/KMS bare metal - Super+P to logout
+Exec=/usr/local/share/viewsun/viewsun-login.sh
+TryExec=/usr/local/bin/viewsun
+Type=Application
+DesktopNames=viewsun
+Keywords=tiling;compositor;drm;kms;window manager;

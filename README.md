@@ -47,7 +47,7 @@ Perfect for: kiosks, minimal distros, learning display servers, and purists who 
 | **🔲 Tiling First** | `master-stack` / `BSP` / `grid` — gaps, borders, `Alt+h/l` master resize |
 | **🖼️ Wallpaper** | `viewsun -w ~/wall.jpg` — PNG/JPG/BMP via `stb_image`, aspect-fill, centered |
 | **⚡ Bare Metal** | DRM dumb BO `mmap` → `drmModeSetCrtc` — directly scanned out, no compositor |
-| **⌨️ Keyboard Driven** | `Alt+Enter` new, `Alt+q` close, `Alt+j/k` focus, `Alt+m/b/g` layouts |
+| **⌨️ Keyboard Driven** | `Alt+Enter` new, `Alt+q` close, **`Super+P` (Win+P) logout**, `Alt+j/k` focus, `Alt+m/b/g` layouts |
 | **🧩 Dual Backend** | `drm` (production) + `sdl` (dev fallback — test inside GNOME/KDE without VT) |
 | **📟 Status Bar** | Built-in bar: layout / win count / master % — software rendered |
 | **🪶 Tiny** | ~800 lines C++17, zero toolkit, `pkg-config libdrm sdl2` only |
@@ -106,7 +106,8 @@ Usage: viewsun [options]
 ```bash
 git clone https://github.com/prabhutvasingh/viewsun && cd viewsun
 make
-sudo make install  # -> /usr/local/bin/viewsun
+sudo make install  # -> /usr/local/bin/viewsun + sessions for login
+# log out -> select "Viewsun" at GDM/SDDM/LightDM, or run: viewsun -w ~/wall.jpg
 viewsun --help
 ```
 
@@ -146,6 +147,7 @@ sudo viewsun --card /dev/dri/card0 -w ~/wall.png
 
 # 4. Controls
 # Alt+Enter  new window   Alt+q close   Alt+Shift+q quit
+# Super+P (Windows+P) logout — instant exit to display manager
 # Alt+j/k    focus        Alt+h/l resize master
 # Alt+m      master       Alt+b bsp     Alt+g grid
 ```
@@ -167,6 +169,18 @@ viewsun -w ~/wall.jpg --backend sdl  # test any image instantly
 Stored as `ARGB32` in `Wallpaper` (`include/wallpaper.h:5`) — blitted in `drawWallpaper()` (`src/wallpaper.cpp:36`) before windows.
 
 ---
+
+## 🔑 Keybindings
+
+| Key | Action |
+|---|---|
+| `Alt+Enter` | spawn window |
+| `Alt+q` | close focused |
+| `Alt+Shift+q` | quit |
+| **`Super+P` (Windows+P)** | **logout — exit to display manager** |
+| `Alt+j/k` | focus next/prev |
+| `Alt+h/l` | resize master |
+| `Alt+m/b/g` | layouts master / bsp / grid |
 
 ## 📖 Usage
 
@@ -207,7 +221,7 @@ flowchart LR
 - **Tiling** `src/tiling.cpp` — `tileMasterStack()` / `tileBSP()` / `tileGrid()` — pure `Rect` math
 - **Renderer** `src/renderer.cpp` — software blit: `fill()` → `drawWallpaper()` → `drawRect()`/borders → `drawText()` → status bar
 - **Backend** `src/backend_drm.cpp` — `open(/dev/dri/card1)` → `drmModeGetResources` → `CREATE_DUMB` → `mmap` → `SetCrtc`; `src/backend_sdl.cpp` — `SDL_GetWindowSurface` for dev
-- **Input** `evdev` poll + `SDL_KEYDOWN` → `InputEvent` (`KEY_*` from `linux/input-event-codes.h`)
+- **Input** `evdev` poll + `SDL_KEYDOWN` → `InputEvent` (`KEY_*` from `linux/input-event-codes.h`) — `Super` tracked via `KEY_LEFTMETA` / `KMOD_GUI` for `Super+P` logout
 - **Config** `include/common.h:12` — gaps, borders, `master_ratio`, colors, `wallpaper_path`
 
 Search path is *purely local* — no X, no Wayland, no socket.
