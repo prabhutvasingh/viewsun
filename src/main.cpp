@@ -135,6 +135,7 @@ int main(int argc, char** argv) {
         while (backend->pollEvent(ev)) {
             if (ev.type==InputEventType::MouseMove) {
                 wm.focusAt(ev.mx, ev.my);
+                wm.tile(sw,sh); // live split follows cursor so left/right both usable
                 continue;
             }
             if (ev.type==InputEventType::MouseButton) {

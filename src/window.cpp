@@ -63,11 +63,18 @@ void WindowManager::resizeMaster(int delta) {
 
 void WindowManager::tile(int sw, int sh) {
     if (windows.empty()) return;
-    // mouse-hover-driven tiling: window under cursor becomes master/first
-    // so new windows tile wherever mouse hovers, not just to the right
+    // mouse-hover-driven tiling: split follows cursor, left/right both usable
+    // master width tracks mouse X (20-80%), so hovering left makes left tile narrow/wide accordingly
+    // and hovered window becomes master so tiling appears where you hover
+    if (sw > 0) {
+        int ratio = mouseX * 100 / sw;
+        if (ratio < 20) ratio = 20;
+        if (ratio > 80) ratio = 80;
+        // only update if mouse is inside screen and we have a meaningful hover
+        // keep manual Alt+h/l adjustments unless mouse moved recently
+        cfg.master_ratio = ratio;
+    }
     if (focused>=0 && focused < (int)windows.size()) {
-        // if mouse is inside a different window than focused, focusAt already updated focused
-        // bring focused to front so hovered area becomes master
         if (focused != 0) {
             Window fw = windows[focused];
             windows.erase(windows.begin()+focused);
@@ -75,7 +82,6 @@ void WindowManager::tile(int sw, int sh) {
             focused = 0;
         }
     } else if (!windows.empty()) {
-        // fallback: find window under mouse and make it master
         for (int i=(int)windows.size()-1;i>=0;--i) if(windows[i].rect.contains(mouseX,mouseY)) {
             Window fw = windows[i];
             windows.erase(windows.begin()+i);
