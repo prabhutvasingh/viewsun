@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
 
     WindowManager wm;
     wm.cfg = cfg;
-    // init custom display server (viewsun compositor) - from scratch, no Wayland
+    // init custom display server (viewsun compositor) - from scratch, no Wayland/X
     auto &ds = DisplayServer::instance();
     if (!ds.init(&wm, sw, sh)) fprintf(stderr,"viewsun: display server failed (custom clients disabled)\n");
     // keep wallpaper path in config for renderer fallback color
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
             int k=ev.keycode;
             if (super && k==KEY_P) { running=false; } // Windows+P logout
             else if (super && k==KEY_ENTER) { wm.addTerminal(); wm.tile(sw,sh); }
-            else if (super && k==KEY_W) { spawnFirefoxWayland(); }
+            else if (super && k==KEY_W) { spawnCustom("browser"); }
             else if (super && k==KEY_E) { spawnCustom("files"); }
             else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n

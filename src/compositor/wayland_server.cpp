@@ -145,6 +145,7 @@ static const struct xdg_toplevel_interface xdg_toplevel_impl{
 };
 
 // wl_surface
+static void surface_destroy(wl_client*, wl_resource *res){ wl_resource_destroy(res); }
 static void surface_attach(wl_client*, wl_resource *res, wl_resource *buf, int32_t x,int32_t y){
     WaylandSurface *s=(WaylandSurface*)wl_resource_get_user_data(res);
     if(buf){
@@ -195,10 +196,15 @@ static void surface_set_buffer_scale(wl_client*, wl_resource*, int32_t){}
 static void surface_damage_buffer(wl_client*, wl_resource*, int32_t,int32_t,int32_t,int32_t){}
 static void surface_offset(wl_client*, wl_resource*, int32_t,int32_t){}
 
+static void surface_get_release(wl_client*, wl_resource*, uint32_t callback){
+    wl_resource *r=wl_resource_create(wl_resource_get_client(wl_resource_create(nullptr,nullptr,0,0)), &wl_callback_interface, 1, callback);
+    wl_callback_send_done(r, 0);
+    wl_resource_destroy(r);
+}
 static const struct wl_surface_interface surface_impl{
-    surface_attach, surface_damage, surface_frame, surface_set_opaque_region,
+    surface_destroy, surface_attach, surface_damage, surface_frame, surface_set_opaque_region,
     surface_set_input_region, surface_commit, surface_set_buffer_transform,
-    surface_set_buffer_scale, surface_damage_buffer, surface_offset
+    surface_set_buffer_scale, surface_damage_buffer, surface_offset, surface_get_release
 };
 
 // globals bind

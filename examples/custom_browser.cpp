@@ -91,26 +91,39 @@ int main(int argc,char**argv){
     };
     std::string body=fetchUrl(url);
     auto draw=[&](bool first){
-        for(int i=0;i<w*h;i++) px[i]=0xFFF0F0F0;
-        for(int y=6;y<26;y++) for(int x=6;x<w-6;x++) px[y*w+x]=0xFFFFFFFF;
-        for(int y=6;y<26;y++){ px[y*w+6]=0xFF999999; px[y*w+w-7]=0xFF999999; }
-        for(int x=6;x<w-6;x++){ px[6*w+x]=0xFF999999; px[25*w+x]=0xFF999999; }
-        drawTextTTF(10,10,url,0xFF000000);
-        int x=10,y=32;
+        for(int i=0;i<w*h;i++) px[i]=0xFF1A1A1A;
+        // Firefox-like tab bar
+        for(int y=0;y<28;y++) for(int x=0;x<w;x++) px[y*w+x]=0xFF2B2A33;
+        for(int y=28;y<30;y++) for(int x=0;x<w;x++) px[y*w+x]=0xFF5B5B66;
+        // tab
+        for(int y=4;y<26;y++) for(int x=8;x<180;x++) px[y*w+x]=0xFF1C1C1C;
+        auto drawTextSimple=[&](int x,int y,const std::string &s,uint32_t col){ drawTextTTF(x,y,s,col); };
+        drawTextSimple(14,8,"Firefox",0xFFFFFFFF);
+        // address bar
+        for(int y=32;y<52;y++) for(int x=8;x<w-8;x++) px[y*w+x]=0xFFFFFFFF;
+        for(int y=32;y<52;y++){ px[y*w+8]=0xFF999999; px[y*w+w-9]=0xFF999999; }
+        for(int x=8;x<w-8;x++){ px[32*w+x]=0xFF999999; px[51*w+x]=0xFF999999; }
+        drawTextSimple(14,36,url,0xFF000000);
+        // nav buttons
+        drawTextSimple( w-110,10,"< > ↻",0xFFAAAAAA);
+        // page
+        for(int y=54;y<h-14;y++) for(int x=8;x<w-8;x++) px[y*w+x]=0xFFFFFFFF;
+        int x=14,y=58;
         std::string cur;
         for(char c: body){
-            if(c==' ' || cur.size()>60){
+            if(c==' ' || cur.size()>50){
                 int tw=0; for(char cc: cur){ int adv,lsb; stbtt_GetCodepointHMetrics(&font,cc,&adv,&lsb); tw+=(int)(adv*scale); }
-                if(x+tw > w-10){ x=10; y+=14; }
+                if(x+tw > w-14){ x=14; y+=14; }
                 if(y>h-20) break;
-                drawTextTTF(x,y,cur,0xFF222222);
-                x+=tw+7;
+                drawTextSimple(x,y,cur,0xFF222222);
+                x+=tw+6;
                 cur.clear();
-                if(c!=' ') cur.push_back(c);
-            } else cur.push_back(c);
+                if(c!=' ' && c!='\n') cur.push_back(c);
+            } else if(c!='\n') cur.push_back(c);
+            else { drawTextSimple(x,y,cur,0xFF222222); x=14; y+=14; cur.clear(); }
         }
-        if(!cur.empty()) drawTextTTF(x,y,cur,0xFF222222);
-        drawTextTTF(10,h-12,"Custom Viewsun Browser - no Wayland, pure SHM",0xFF666666);
+        if(!cur.empty()) drawTextSimple(x,y,cur,0xFF222222);
+        drawTextSimple(10,h-10,"Viewsun Custom Browser — Firefox UI inside your compositor (no Wayland/X)",0xFFB0B0B0);
     };
     draw(true);
     client.createBuffer(winId,fd,w,h,stride);
