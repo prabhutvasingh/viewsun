@@ -55,16 +55,21 @@ public:
         }
         if (e.type==SDL_KEYDOWN || e.type==SDL_KEYUP) {
             ev.type = (e.type==SDL_KEYDOWN)?InputEventType::KeyDown:InputEventType::KeyUp;
-            bool alt = (SDL_GetModState() & KMOD_ALT);
-            bool shift = (SDL_GetModState() & KMOD_SHIFT);
-            bool ctrl = (SDL_GetModState() & KMOD_CTRL);
-            bool super = (SDL_GetModState() & KMOD_GUI);
+            // use event mod, not global GetModState - reliable inside GNOME
+            Uint16 mod = e.key.keysym.mod;
+            bool alt = (mod & KMOD_ALT);
+            bool shift = (mod & KMOD_SHIFT);
+            bool ctrl = (mod & KMOD_CTRL);
+            bool super = (mod & KMOD_GUI);
             ev.alt=alt; ev.shift=shift; ev.ctrl=ctrl; ev.super=super;
             SDL_Keycode k = e.key.keysym.sym;
             // map to linux KEY_ codes for shared logic
             switch(k) {
-                case SDLK_RETURN: ev.keycode=KEY_ENTER; break;
+                case SDLK_RETURN: case SDLK_KP_ENTER: ev.keycode=KEY_ENTER; break;
                 case SDLK_q: ev.keycode=KEY_Q; break;
+                case SDLK_n: ev.keycode=KEY_N; break;
+                case SDLK_c: ev.keycode=KEY_C; break;
+                case SDLK_x: ev.keycode=KEY_X; break;
                 case SDLK_j: ev.keycode=KEY_J; break;
                 case SDLK_k: ev.keycode=KEY_K; break;
                 case SDLK_h: ev.keycode=KEY_H; break;

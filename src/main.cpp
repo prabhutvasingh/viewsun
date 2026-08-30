@@ -22,8 +22,11 @@ static void print_help(const char* prog) {
     printf("  -h, --help           show this help\n");
     printf("  -v, --version        show version\n");
     printf("\nControls:\n");
-    printf("  Alt+Enter  spawn window   Alt+q close   Alt+Shift+q quit\n");
-    printf("  Super+P (Windows+P) logout  Alt+j/k focus next/prev  Alt+h/l resize master  Alt+m/b/g layouts\n");
+    printf("  Alt+Enter (or Ctrl+Enter/Super+Enter, or Ctrl+n) spawn window\n");
+    printf("  Alt+q (or Ctrl+q/Super+q, or Ctrl+c/x, or right-click) close\n");
+    printf("  Alt+Shift+q quit  Super+P (Windows+P) logout\n");
+    printf("  j/k focus  h/l resize master  m/b/g layouts (with Alt/Ctrl/Super, or plain)\n");
+    printf("  Mouse: left-click focus, right-click close, move focuses\n");
     printf("\nExamples:\n");
     printf("  viewsun -w ~/wallpaper.jpg\n");
     printf("  viewsun --backend sdl -w /tmp/bg.png\n");
@@ -145,19 +148,31 @@ int main(int argc, char** argv) {
                 continue;
             }
             if (ev.type!=InputEventType::KeyDown) continue;
-            bool alt=ev.alt, shift=ev.shift; bool super=ev.super;
+            bool alt=ev.alt, shift=ev.shift; bool super=ev.super; bool ctrl=ev.ctrl;
             int k=ev.keycode;
+            // Debug log for GNOME: show key if unknown
+            // fprintf(stderr,"key %d alt=%d super=%d ctrl=%d shift=%d\n",k,alt,super,ctrl,shift);
             if (super && k==KEY_P) { running=false; } // Windows+P logout
-            else if (alt && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
-            else if (alt && shift && k==KEY_Q) { running=false; }
-            else if (alt && k==KEY_Q) { wm.removeFocused(); wm.tile(sw,sh); }
-            else if (alt && k==KEY_J) { wm.focusNext(1); wm.tile(sw,sh); }
-            else if (alt && k==KEY_K) { wm.focusNext(-1); wm.tile(sw,sh); }
-            else if (alt && k==KEY_H) { wm.resizeMaster(-5); wm.tile(sw,sh); }
-            else if (alt && k==KEY_L) { wm.resizeMaster(5); wm.tile(sw,sh); }
-            else if (alt && k==KEY_M) { wm.setLayout(Layout::MasterStack); wm.tile(sw,sh); }
-            else if (alt && k==KEY_B) { wm.setLayout(Layout::BSP); wm.tile(sw,sh); }
-            else if (alt && k==KEY_G) { wm.setLayout(Layout::Grid); wm.tile(sw,sh); }
+            else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
+            else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n
+            else if ((alt && shift) && k==KEY_Q) { running=false; }
+            else if ((alt || super || ctrl) && k==KEY_Q) { wm.removeFocused(); wm.tile(sw,sh); }
+            else if ((alt || super || ctrl) && k==KEY_C) { wm.removeFocused(); wm.tile(sw,sh); }
+            else if ((alt || super || ctrl) && k==KEY_X) { wm.removeFocused(); wm.tile(sw,sh); }
+            else if (k==KEY_J || k==KEY_K || k==KEY_H || k==KEY_L || k==KEY_M || k==KEY_B || k==KEY_G) {
+                // allow with or without mod inside GNOME where Alt grabbed
+                bool mod = alt || super || ctrl;
+                if (!mod && wm.windows.size()<=3) mod=true; // allow plain keys when no mod (GNOME steals Alt)
+                if (mod) {
+                    if (k==KEY_J) { wm.focusNext(1); wm.tile(sw,sh); }
+                    else if (k==KEY_K) { wm.focusNext(-1); wm.tile(sw,sh); }
+                    else if (k==KEY_H) { wm.resizeMaster(-5); wm.tile(sw,sh); }
+                    else if (k==KEY_L) { wm.resizeMaster(5); wm.tile(sw,sh); }
+                    else if (k==KEY_M) { wm.setLayout(Layout::MasterStack); wm.tile(sw,sh); }
+                    else if (k==KEY_B) { wm.setLayout(Layout::BSP); wm.tile(sw,sh); }
+                    else if (k==KEY_G) { wm.setLayout(Layout::Grid); wm.tile(sw,sh); }
+                }
+            }
         }
 
         Framebuffer fb = backend->framebuffer();
