@@ -155,6 +155,11 @@ int main(int argc, char** argv) {
     while (running) {
         InputEvent ev{};
         while (backend->pollEvent(ev)) {
+            if (ev.type==InputEventType::Text) {
+                Window* f = wm.getFocused();
+                if (f && f->isTerm && f->term) f->term->writeInput(ev.text, strlen(ev.text));
+                continue;
+            }
             if (ev.type==InputEventType::MouseMove) {
                 wm.focusAt(ev.mx, ev.my);
                 // do not retile on hover - avoids resize-only bug
@@ -171,12 +176,26 @@ int main(int argc, char** argv) {
                 continue;
             }
             if (ev.type!=InputEventType::KeyDown) continue;
+            // prioritize terminal input when focused is term and no WM mod
+            Window* fterm = wm.getFocused();
+            bool isTermFocused = fterm && fterm->isTerm && fterm->term;
+            bool wmMod = ev.alt || ev.super || ev.ctrl;
+            if (isTermFocused && !wmMod) {
+                if (ev.keycode==KEY_BACKSPACE) { fterm->term->backspace(); continue; }
+                if (ev.keycode==KEY_ENTER) { fterm->term->enter(); continue; }
+                if (ev.keycode==KEY_TAB) { fterm->term->writeInput("    ",4); continue; }
+                if (ev.keycode==KEY_SPACE) { fterm->term->writeInputChar(' '); continue; }
+                // let Text events handle actual typing, but also handle via keycode as fallback
+                // if we get here with printable, try keycodeToChar
+                char c = keycodeToChar(ev.keycode, ev.shift);
+                if (c) { fterm->term->writeInputChar(c); continue; }
+            }
             bool alt=ev.alt, shift=ev.shift; bool super=ev.super; bool ctrl=ev.ctrl;
             int k=ev.keycode;
             if (super && k==KEY_P) { running=false; } // Windows+P logout
             else if (super && k==KEY_ENTER) { wm.addTerminal(); wm.tile(sw,sh); }
-            else if (super && k==KEY_W) { wm.addBrowser(); wm.tile(sw,sh); }
-            else if (super && k==KEY_E) { wm.addFileManager(); wm.tile(sw,sh); }
+            else if (super && k==KEY_W) { wm.addBrowser(); wm.tile(sw,sh); spawnBrowser(); }
+            else if (super && k==KEY_E) { wm.addFileManager(); wm.tile(sw,sh); spawnFileManager(); }
             else if ((alt || super || ctrl) && k==KEY_ENTER) { wm.addWindow(); wm.tile(sw,sh); }
             else if ((alt || super || ctrl) && k==KEY_N) { wm.addWindow(); wm.tile(sw,sh); } // fallback n
             else if ((alt && shift) && k==KEY_Q) { running=false; }

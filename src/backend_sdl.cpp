@@ -14,6 +14,7 @@ public:
         W=w; H=h;
         win = SDL_CreateWindow("viewsun", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W, H, SDL_WINDOW_SHOWN);
         if (!win) { fprintf(stderr,"SDL_CreateWindow: %s\n", SDL_GetError()); return false; }
+        SDL_StartTextInput();
         surf = SDL_GetWindowSurface(win);
         if (!surf) { fprintf(stderr,"SDL_GetWindowSurface: %s\n", SDL_GetError()); return false; }
         fb.pixels = (uint32_t*)surf->pixels;
@@ -53,6 +54,11 @@ public:
             ev.ctrl=(SDL_GetModState() & KMOD_CTRL); ev.super=(SDL_GetModState() & KMOD_GUI);
             return true;
         }
+        if (e.type==SDL_TEXTINPUT) {
+            ev.type = InputEventType::Text;
+            strncpy(ev.text, e.text.text, sizeof(ev.text)-1);
+            return true;
+        }
         if (e.type==SDL_KEYDOWN || e.type==SDL_KEYUP) {
             ev.type = (e.type==SDL_KEYDOWN)?InputEventType::KeyDown:InputEventType::KeyUp;
             // use event mod, not global GetModState - reliable inside GNOME
@@ -66,7 +72,14 @@ public:
             // map to linux KEY_ codes for shared logic
             switch(k) {
                 case SDLK_RETURN: case SDLK_KP_ENTER: ev.keycode=KEY_ENTER; break;
+                case SDLK_BACKSPACE: ev.keycode=KEY_BACKSPACE; break;
+                case SDLK_TAB: ev.keycode=KEY_TAB; break;
+                case SDLK_SPACE: ev.keycode=KEY_SPACE; break;
                 case SDLK_q: ev.keycode=KEY_Q; break;
+                case SDLK_w: ev.keycode=KEY_W; break;
+                case SDLK_e: ev.keycode=KEY_E; break;
+                case SDLK_a: ev.keycode=KEY_A; break;
+                case SDLK_s: ev.keycode=KEY_S; break;
                 case SDLK_n: ev.keycode=KEY_N; break;
                 case SDLK_c: ev.keycode=KEY_C; break;
                 case SDLK_x: ev.keycode=KEY_X; break;

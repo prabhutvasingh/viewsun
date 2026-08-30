@@ -9,13 +9,14 @@ struct Framebuffer {
     int stride = 0; // pixels per line
 };
 
-enum class InputEventType { KeyDown, KeyUp, MouseMove, MouseButton };
+enum class InputEventType { KeyDown, KeyUp, MouseMove, MouseButton, Text };
 struct InputEvent {
     InputEventType type;
     int keycode = 0; // linux input.h KEY_*
     bool alt = false, shift = false, ctrl = false, super = false;
     int mx = 0, my = 0;
     int button = 0;
+    char text[32] = {0};
 };
 
 // Abstract backend: DRM or SDL
